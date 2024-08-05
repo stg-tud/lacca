@@ -1,0 +1,139 @@
+ body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+}
+
+#nav-bar {
+  background-color: #343a40;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-around;
+}
+
+.nav-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
+#kanban-board {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 2rem;
+  padding: 0 1rem;
+}
+
+.kanban-column {
+  background-color: #e9ecef;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  width: 18%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-column-header {
+  text-align: center;
+  color: #495057;
+}
+
+.kanban-column-content {
+  min-height: 600px; /* Increased height */
+  border: 1px solid #ced4da;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  margin-top: 1rem;
+}
+
+.kanban-card {
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: move;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#add-project-button {
+  display: block;
+  margin: 2rem auto;
+  padding: 0.5rem 2rem;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+#add-project-button:hover {
+  background-color: #0056b3;
+}
+
+#form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#add-project-form {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  text-align: center;
+}
+
+#add-project-form h3 {
+  margin-bottom: 1rem;
+  color: #495057;
+}
+
+#add-project-form input {
+  width: calc(100% - 1rem); /* Adjusted width */
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+#add-project-form button {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+#add-project-form button:first-child {
+  background-color: #28a745;
+  color: #ffffff;
+}
+
+#add-project-form button:first-child:hover {
+  background-color: #218838;
+}
+
+#add-project-form button:last-child {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+#add-project-form button:last-child:hover {
+  background-color: #c82333;
+}
