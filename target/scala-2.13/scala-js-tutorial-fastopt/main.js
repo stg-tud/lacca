@@ -974,6 +974,252 @@ var $d_jl_Void = new $TypeData().initClass(0, "java.lang.Void", ({
   jl_Void: 1
 }), ((x) => (x === (void 0))));
 /** @constructor */
+function $c_Lkanban_DragAndDrop$() {
+}
+$c_Lkanban_DragAndDrop$.prototype = new $h_O();
+$c_Lkanban_DragAndDrop$.prototype.constructor = $c_Lkanban_DragAndDrop$;
+/** @constructor */
+function $h_Lkanban_DragAndDrop$() {
+}
+$h_Lkanban_DragAndDrop$.prototype = $c_Lkanban_DragAndDrop$.prototype;
+$c_Lkanban_DragAndDrop$.prototype.setupDragAndDrop__V = (function() {
+  var $x_5 = interact(".kanban-card");
+  var array = [new $c_T2("inertia", true), new $c_T2("autoScroll", true), new $c_T2("onmove", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$2) => {
+    var target = event$2.target;
+    var $x_2 = parseFloat;
+    var s = $as_T(target.getAttribute("data-x"));
+    var $x_1 = $x_2(s);
+    var x = ($uD($x_1) + $uD(event$2.dx));
+    var $x_4 = parseFloat;
+    var s$1 = $as_T(target.getAttribute("data-y"));
+    var $x_3 = $x_4(s$1);
+    var y = ($uD($x_3) + $uD(event$2.dy));
+    target.style.transform = (((("translate(" + x) + "px, ") + y) + "px)");
+    target.setAttribute("data-x", ("" + x));
+    target.setAttribute("data-y", ("" + y));
+  })))), new $c_T2("onend", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$3$2) => {
+    var target$1 = event$3$2.target;
+    target$1.style.transform = "translate(0, 0)";
+    target$1.setAttribute("data-x", "0");
+    target$1.setAttribute("data-y", "0");
+  }))))];
+  var fields = new $c_sjsr_WrappedVarArgs(array);
+  $x_5.draggable($m_sjs_js_special_package$().objectLiteral__sci_Seq__sjs_js_Object(fields));
+  var $x_6 = interact(".kanban-column-content");
+  var array$1 = [new $c_T2("accept", ".kanban-card"), new $c_T2("overlap", 0.5), new $c_T2("ondrop", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$4$2) => {
+    var draggableElement = event$4$2.relatedTarget;
+    var dropzoneElement = event$4$2.target;
+    dropzoneElement.appendChild(draggableElement);
+    draggableElement.setAttribute("data-x", "0");
+    draggableElement.setAttribute("data-y", "0");
+    draggableElement.style.transform = "translate(0, 0)";
+  }))))];
+  var fields$1 = new $c_sjsr_WrappedVarArgs(array$1);
+  $x_6.dropzone($m_sjs_js_special_package$().objectLiteral__sci_Seq__sjs_js_Object(fields$1));
+});
+$c_Lkanban_DragAndDrop$.prototype.initializeDragAndDrop__Lorg_scalajs_dom_HTMLDivElement__V = (function(card) {
+  var $x_5 = interact(card);
+  var array = [new $c_T2("inertia", true), new $c_T2("autoScroll", true), new $c_T2("onmove", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$2) => {
+    var target = event$2.target;
+    var $x_2 = parseFloat;
+    var s = $as_T(target.getAttribute("data-x"));
+    var $x_1 = $x_2(s);
+    var x = ($uD($x_1) + $uD(event$2.dx));
+    var $x_4 = parseFloat;
+    var s$1 = $as_T(target.getAttribute("data-y"));
+    var $x_3 = $x_4(s$1);
+    var y = ($uD($x_3) + $uD(event$2.dy));
+    target.style.transform = (((("translate(" + x) + "px, ") + y) + "px)");
+    target.setAttribute("data-x", ("" + x));
+    target.setAttribute("data-y", ("" + y));
+  })))), new $c_T2("onend", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$3$2) => {
+    var target$1 = event$3$2.target;
+    target$1.style.transform = "translate(0, 0)";
+    target$1.setAttribute("data-x", "0");
+    target$1.setAttribute("data-y", "0");
+  }))))];
+  var fields = new $c_sjsr_WrappedVarArgs(array);
+  $x_5.draggable($m_sjs_js_special_package$().objectLiteral__sci_Seq__sjs_js_Object(fields));
+});
+var $d_Lkanban_DragAndDrop$ = new $TypeData().initClass($c_Lkanban_DragAndDrop$, "kanban.DragAndDrop$", ({
+  Lkanban_DragAndDrop$: 1
+}));
+var $n_Lkanban_DragAndDrop$;
+function $m_Lkanban_DragAndDrop$() {
+  if ((!$n_Lkanban_DragAndDrop$)) {
+    $n_Lkanban_DragAndDrop$ = new $c_Lkanban_DragAndDrop$();
+  }
+  return $n_Lkanban_DragAndDrop$;
+}
+function $s_Lkanban_MainApp__main__AT__V(args) {
+  $m_Lkanban_MainApp$().main__AT__V(args);
+}
+/** @constructor */
+function $c_Lkanban_MainApp$() {
+}
+$c_Lkanban_MainApp$.prototype = new $h_O();
+$c_Lkanban_MainApp$.prototype.constructor = $c_Lkanban_MainApp$;
+/** @constructor */
+function $h_Lkanban_MainApp$() {
+}
+$h_Lkanban_MainApp$.prototype = $c_Lkanban_MainApp$.prototype;
+$c_Lkanban_MainApp$.prototype.main__AT__V = (function(args) {
+  document.addEventListener("DOMContentLoaded", ((arg1$2) => {
+    $m_Lkanban_MainApp$().kanban$MainApp$$$anonfun$main$1__Lorg_scalajs_dom_Event__V(arg1$2);
+  }));
+});
+$c_Lkanban_MainApp$.prototype.kanban$MainApp$$$anonfun$main$1__Lorg_scalajs_dom_Event__V = (function(e) {
+  $m_Lkanban_UI$().setupUI__V();
+  $m_Lkanban_DragAndDrop$().setupDragAndDrop__V();
+});
+var $d_Lkanban_MainApp$ = new $TypeData().initClass($c_Lkanban_MainApp$, "kanban.MainApp$", ({
+  Lkanban_MainApp$: 1
+}));
+var $n_Lkanban_MainApp$;
+function $m_Lkanban_MainApp$() {
+  if ((!$n_Lkanban_MainApp$)) {
+    $n_Lkanban_MainApp$ = new $c_Lkanban_MainApp$();
+  }
+  return $n_Lkanban_MainApp$;
+}
+/** @constructor */
+function $c_Lkanban_ProjectForm$() {
+}
+$c_Lkanban_ProjectForm$.prototype = new $h_O();
+$c_Lkanban_ProjectForm$.prototype.constructor = $c_Lkanban_ProjectForm$;
+/** @constructor */
+function $h_Lkanban_ProjectForm$() {
+}
+$h_Lkanban_ProjectForm$.prototype = $c_Lkanban_ProjectForm$.prototype;
+$c_Lkanban_ProjectForm$.prototype.openAddProjectForm__V = (function() {
+  var formOverlay = document.createElement("div");
+  formOverlay.id = "form-overlay";
+  var form = document.createElement("div");
+  form.id = "add-project-form";
+  var formTitle = document.createElement("h3");
+  formTitle.textContent = "Neues Projekt hinzuf\u00fcgen";
+  var input = document.createElement("input");
+  input.id = "project-name";
+  input.placeholder = "Projektname eingeben";
+  var submitButton = document.createElement("button");
+  submitButton.textContent = "Hinzuf\u00fcgen";
+  submitButton.addEventListener("click", ((arg1$2) => $m_Lkanban_ProjectForm$().kanban$ProjectForm$$$anonfun$openAddProjectForm$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2, formOverlay)));
+  var cancelButton = document.createElement("button");
+  cancelButton.textContent = "Abbrechen";
+  cancelButton.addEventListener("click", ((arg1$2$1) => $m_Lkanban_ProjectForm$().kanban$ProjectForm$$$anonfun$openAddProjectForm$3__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2$1, formOverlay)));
+  form.appendChild(formTitle);
+  form.appendChild(input);
+  form.appendChild(submitButton);
+  form.appendChild(cancelButton);
+  formOverlay.appendChild(form);
+  document.body.appendChild(formOverlay);
+});
+$c_Lkanban_ProjectForm$.prototype.addProject__V = (function() {
+  var projectName = $as_T(document.getElementById("project-name").value);
+  var this$3 = $n(projectName);
+  if ((!(this$3 === ""))) {
+    var newCard = document.createElement("div");
+    newCard.setAttribute("class", "kanban-card");
+    newCard.textContent = projectName;
+    newCard.setAttribute("draggable", "true");
+    var neuColumn = document.getElementById("column-neu");
+    neuColumn.appendChild(newCard);
+    newCard.setAttribute("data-x", "0");
+    newCard.setAttribute("data-y", "0");
+    $m_Lkanban_DragAndDrop$().initializeDragAndDrop__Lorg_scalajs_dom_HTMLDivElement__V(newCard);
+  }
+});
+$c_Lkanban_ProjectForm$.prototype.kanban$ProjectForm$$$anonfun$openAddProjectForm$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
+  $m_Lkanban_ProjectForm$().addProject__V();
+  return document.body.removeChild(formOverlay$1);
+});
+$c_Lkanban_ProjectForm$.prototype.kanban$ProjectForm$$$anonfun$openAddProjectForm$3__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
+  return document.body.removeChild(formOverlay$1);
+});
+var $d_Lkanban_ProjectForm$ = new $TypeData().initClass($c_Lkanban_ProjectForm$, "kanban.ProjectForm$", ({
+  Lkanban_ProjectForm$: 1
+}));
+var $n_Lkanban_ProjectForm$;
+function $m_Lkanban_ProjectForm$() {
+  if ((!$n_Lkanban_ProjectForm$)) {
+    $n_Lkanban_ProjectForm$ = new $c_Lkanban_ProjectForm$();
+  }
+  return $n_Lkanban_ProjectForm$;
+}
+/** @constructor */
+function $c_Lkanban_UI$() {
+}
+$c_Lkanban_UI$.prototype = new $h_O();
+$c_Lkanban_UI$.prototype.constructor = $c_Lkanban_UI$;
+/** @constructor */
+function $h_Lkanban_UI$() {
+}
+$h_Lkanban_UI$.prototype = $c_Lkanban_UI$.prototype;
+$c_Lkanban_UI$.prototype.setupUI__V = (function() {
+  var navBar = document.createElement("div");
+  navBar.id = "nav-bar";
+  var array = ["Kanzleiboard", "Kalkulationen", "Angebote", "Rechnungen", "Controlling", "Zeiten", "Einstellungen"];
+  var elems = new $c_sjsr_WrappedVarArgs(array);
+  var links = $m_sci_Nil$().prependedAll__sc_IterableOnce__sci_List(elems);
+  var this$5 = $n(links);
+  var these = this$5;
+  while ((!$n(these).isEmpty__Z())) {
+    var arg1 = $n(these).head__O();
+    var linkText = $as_T(arg1);
+    var link = document.createElement("a");
+    var this$6 = $n(linkText);
+    link.href = ("#" + $as_T(this$6.toLowerCase()));
+    link.textContent = linkText;
+    link.setAttribute("class", "nav-link");
+    navBar.appendChild(link);
+    these = $as_sci_List($n(these).tail__O());
+  }
+  document.body.appendChild(navBar);
+  var kanbanBoard = document.createElement("div");
+  kanbanBoard.id = "kanban-board";
+  var array$1 = ["Neu", "Geplant", "In Arbeit", "Abrechenbar", "Abgeschlossen"];
+  var elems$1 = new $c_sjsr_WrappedVarArgs(array$1);
+  var columns = $m_sci_Nil$().prependedAll__sc_IterableOnce__sci_List(elems$1);
+  var this$11 = $n(columns);
+  var these$1 = this$11;
+  while ((!$n(these$1).isEmpty__Z())) {
+    var arg1$1 = $n(these$1).head__O();
+    var columnTitle = $as_T(arg1$1);
+    var column = document.createElement("div");
+    column.setAttribute("class", "kanban-column");
+    var columnHeader = document.createElement("h3");
+    columnHeader.setAttribute("class", "kanban-column-header");
+    columnHeader.textContent = columnTitle;
+    var columnContent = document.createElement("div");
+    columnContent.setAttribute("class", "kanban-column-content");
+    var this$12 = $n(columnTitle);
+    var this$13 = $n($as_T(this$12.toLowerCase()));
+    columnContent.id = ("column-" + $as_T(this$13.split(" ").join("-")));
+    column.appendChild(columnHeader);
+    column.appendChild(columnContent);
+    kanbanBoard.appendChild(column);
+    these$1 = $as_sci_List($n(these$1).tail__O());
+  }
+  document.body.appendChild(kanbanBoard);
+  var addButton = document.createElement("button");
+  addButton.textContent = "Projekt hinzuf\u00fcgen";
+  addButton.id = "add-project-button";
+  addButton.addEventListener("click", ((arg1$2) => {
+    $m_Lkanban_ProjectForm$().openAddProjectForm__V();
+  }));
+  document.body.appendChild(addButton);
+});
+var $d_Lkanban_UI$ = new $TypeData().initClass($c_Lkanban_UI$, "kanban.UI$", ({
+  Lkanban_UI$: 1
+}));
+var $n_Lkanban_UI$;
+function $m_Lkanban_UI$() {
+  if ((!$n_Lkanban_UI$)) {
+    $n_Lkanban_UI$ = new $c_Lkanban_UI$();
+  }
+  return $n_Lkanban_UI$;
+}
+/** @constructor */
 function $c_RTLong(lo, hi) {
   this.RTLong__f_lo = 0;
   this.RTLong__f_hi = 0;
@@ -1785,195 +2031,6 @@ $c_s_util_hashing_MurmurHash3.prototype.listHash__sci_List__I__I = (function(xs,
   }
   return ((rangeState === 2) ? this.rangeHash__I__I__I__I__I(initial, rangeDiff, prev, seed) : this.finalizeHash__I__I__I(h, n));
 });
-function $s_Ltutorial_webapp_TutorialApp__main__AT__V(args) {
-  $m_Ltutorial_webapp_TutorialApp$().main__AT__V(args);
-}
-/** @constructor */
-function $c_Ltutorial_webapp_TutorialApp$() {
-}
-$c_Ltutorial_webapp_TutorialApp$.prototype = new $h_O();
-$c_Ltutorial_webapp_TutorialApp$.prototype.constructor = $c_Ltutorial_webapp_TutorialApp$;
-/** @constructor */
-function $h_Ltutorial_webapp_TutorialApp$() {
-}
-$h_Ltutorial_webapp_TutorialApp$.prototype = $c_Ltutorial_webapp_TutorialApp$.prototype;
-$c_Ltutorial_webapp_TutorialApp$.prototype.main__AT__V = (function(args) {
-  document.addEventListener("DOMContentLoaded", ((arg1$2) => {
-    $m_Ltutorial_webapp_TutorialApp$().tutorial$webapp$TutorialApp$$$anonfun$main$1__Lorg_scalajs_dom_Event__V(arg1$2);
-  }));
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.setupUI__V = (function() {
-  var navBar = document.createElement("div");
-  navBar.id = "nav-bar";
-  var array = ["Kanzleiboard", "Kalkulationen", "Angebote", "Rechnungen", "Controlling", "Zeiten", "Einstellungen"];
-  var elems = new $c_sjsr_WrappedVarArgs(array);
-  var links = $m_sci_Nil$().prependedAll__sc_IterableOnce__sci_List(elems);
-  var this$5 = $n(links);
-  var these = this$5;
-  while ((!$n(these).isEmpty__Z())) {
-    var arg1 = $n(these).head__O();
-    var linkText = $as_T(arg1);
-    var link = document.createElement("a");
-    var this$6 = $n(linkText);
-    link.href = ("#" + $as_T(this$6.toLowerCase()));
-    link.textContent = linkText;
-    link.setAttribute("class", "nav-link");
-    navBar.appendChild(link);
-    these = $as_sci_List($n(these).tail__O());
-  }
-  document.body.appendChild(navBar);
-  var kanbanBoard = document.createElement("div");
-  kanbanBoard.id = "kanban-board";
-  var array$1 = ["Neu", "Geplant", "In Arbeit", "Abrechenbar", "Abgeschlossen"];
-  var elems$1 = new $c_sjsr_WrappedVarArgs(array$1);
-  var columns = $m_sci_Nil$().prependedAll__sc_IterableOnce__sci_List(elems$1);
-  var this$11 = $n(columns);
-  var these$1 = this$11;
-  while ((!$n(these$1).isEmpty__Z())) {
-    var arg1$1 = $n(these$1).head__O();
-    var columnTitle = $as_T(arg1$1);
-    var column = document.createElement("div");
-    column.setAttribute("class", "kanban-column");
-    var columnHeader = document.createElement("h3");
-    columnHeader.setAttribute("class", "kanban-column-header");
-    columnHeader.textContent = columnTitle;
-    var columnContent = document.createElement("div");
-    columnContent.setAttribute("class", "kanban-column-content");
-    var this$12 = $n(columnTitle);
-    var this$13 = $n($as_T(this$12.toLowerCase()));
-    columnContent.id = ("column-" + $as_T(this$13.split(" ").join("-")));
-    column.appendChild(columnHeader);
-    column.appendChild(columnContent);
-    kanbanBoard.appendChild(column);
-    these$1 = $as_sci_List($n(these$1).tail__O());
-  }
-  document.body.appendChild(kanbanBoard);
-  var addButton = document.createElement("button");
-  addButton.textContent = "Projekt hinzuf\u00fcgen";
-  addButton.id = "add-project-button";
-  addButton.addEventListener("click", ((arg1$2) => {
-    $m_Ltutorial_webapp_TutorialApp$().openAddProjectForm__V();
-  }));
-  document.body.appendChild(addButton);
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.openAddProjectForm__V = (function() {
-  var formOverlay = document.createElement("div");
-  formOverlay.id = "form-overlay";
-  var form = document.createElement("div");
-  form.id = "add-project-form";
-  var formTitle = document.createElement("h3");
-  formTitle.textContent = "Neues Projekt hinzuf\u00fcgen";
-  var input = document.createElement("input");
-  input.id = "project-name";
-  input.placeholder = "Projektname eingeben";
-  var submitButton = document.createElement("button");
-  submitButton.textContent = "Hinzuf\u00fcgen";
-  submitButton.addEventListener("click", ((arg1$2) => $m_Ltutorial_webapp_TutorialApp$().tutorial$webapp$TutorialApp$$$anonfun$openAddProjectForm$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2, formOverlay)));
-  var cancelButton = document.createElement("button");
-  cancelButton.textContent = "Abbrechen";
-  cancelButton.addEventListener("click", ((arg1$2$1) => $m_Ltutorial_webapp_TutorialApp$().tutorial$webapp$TutorialApp$$$anonfun$openAddProjectForm$3__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2$1, formOverlay)));
-  form.appendChild(formTitle);
-  form.appendChild(input);
-  form.appendChild(submitButton);
-  form.appendChild(cancelButton);
-  formOverlay.appendChild(form);
-  document.body.appendChild(formOverlay);
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.addProject__V = (function() {
-  var projectName = $as_T(document.getElementById("project-name").value);
-  var this$3 = $n(projectName);
-  if ((!(this$3 === ""))) {
-    var newCard = document.createElement("div");
-    newCard.setAttribute("class", "kanban-card");
-    newCard.textContent = projectName;
-    newCard.setAttribute("draggable", "true");
-    var neuColumn = document.getElementById("column-neu");
-    neuColumn.appendChild(newCard);
-    newCard.setAttribute("data-x", "0");
-    newCard.setAttribute("data-y", "0");
-    this.initializeDragAndDrop__Lorg_scalajs_dom_HTMLDivElement__V(newCard);
-  }
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.setupDragAndDrop__V = (function() {
-  var $x_5 = interact(".kanban-card");
-  var array = [new $c_T2("inertia", true), new $c_T2("autoScroll", true), new $c_T2("onmove", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$2) => {
-    var target = event$2.target;
-    var $x_2 = parseFloat;
-    var s = $as_T(target.getAttribute("data-x"));
-    var $x_1 = $x_2(s);
-    var x = ($uD($x_1) + $uD(event$2.dx));
-    var $x_4 = parseFloat;
-    var s$1 = $as_T(target.getAttribute("data-y"));
-    var $x_3 = $x_4(s$1);
-    var y = ($uD($x_3) + $uD(event$2.dy));
-    target.style.transform = (((("translate(" + x) + "px, ") + y) + "px)");
-    target.setAttribute("data-x", ("" + x));
-    target.setAttribute("data-y", ("" + y));
-  })))), new $c_T2("onend", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$3$2) => {
-    var target$1 = event$3$2.target;
-    target$1.style.transform = "translate(0, 0)";
-    target$1.setAttribute("data-x", "0");
-    target$1.setAttribute("data-y", "0");
-  }))))];
-  var fields = new $c_sjsr_WrappedVarArgs(array);
-  $x_5.draggable($m_sjs_js_special_package$().objectLiteral__sci_Seq__sjs_js_Object(fields));
-  var $x_6 = interact(".kanban-column-content");
-  var array$1 = [new $c_T2("accept", ".kanban-card"), new $c_T2("overlap", 0.5), new $c_T2("ondrop", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$4$2) => {
-    var draggableElement = event$4$2.relatedTarget;
-    var dropzoneElement = event$4$2.target;
-    dropzoneElement.appendChild(draggableElement);
-    draggableElement.setAttribute("data-x", "0");
-    draggableElement.setAttribute("data-y", "0");
-    draggableElement.style.transform = "translate(0, 0)";
-  }))))];
-  var fields$1 = new $c_sjsr_WrappedVarArgs(array$1);
-  $x_6.dropzone($m_sjs_js_special_package$().objectLiteral__sci_Seq__sjs_js_Object(fields$1));
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.initializeDragAndDrop__Lorg_scalajs_dom_HTMLDivElement__V = (function(card) {
-  var $x_5 = interact(card);
-  var array = [new $c_T2("inertia", true), new $c_T2("autoScroll", true), new $c_T2("onmove", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$2) => {
-    var target = event$2.target;
-    var $x_2 = parseFloat;
-    var s = $as_T(target.getAttribute("data-x"));
-    var $x_1 = $x_2(s);
-    var x = ($uD($x_1) + $uD(event$2.dx));
-    var $x_4 = parseFloat;
-    var s$1 = $as_T(target.getAttribute("data-y"));
-    var $x_3 = $x_4(s$1);
-    var y = ($uD($x_3) + $uD(event$2.dy));
-    target.style.transform = (((("translate(" + x) + "px, ") + y) + "px)");
-    target.setAttribute("data-x", ("" + x));
-    target.setAttribute("data-y", ("" + y));
-  })))), new $c_T2("onend", $m_sjs_js_Any$().fromFunction1__F1__sjs_js_Function1(new $c_sjsr_AnonFunction1(((event$3$2) => {
-    var target$1 = event$3$2.target;
-    target$1.style.transform = "translate(0, 0)";
-    target$1.setAttribute("data-x", "0");
-    target$1.setAttribute("data-y", "0");
-  }))))];
-  var fields = new $c_sjsr_WrappedVarArgs(array);
-  $x_5.draggable($m_sjs_js_special_package$().objectLiteral__sci_Seq__sjs_js_Object(fields));
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.tutorial$webapp$TutorialApp$$$anonfun$main$1__Lorg_scalajs_dom_Event__V = (function(e) {
-  $m_Ltutorial_webapp_TutorialApp$().setupUI__V();
-  $m_Ltutorial_webapp_TutorialApp$().setupDragAndDrop__V();
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.tutorial$webapp$TutorialApp$$$anonfun$openAddProjectForm$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
-  $m_Ltutorial_webapp_TutorialApp$().addProject__V();
-  return document.body.removeChild(formOverlay$1);
-});
-$c_Ltutorial_webapp_TutorialApp$.prototype.tutorial$webapp$TutorialApp$$$anonfun$openAddProjectForm$3__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
-  return document.body.removeChild(formOverlay$1);
-});
-var $d_Ltutorial_webapp_TutorialApp$ = new $TypeData().initClass($c_Ltutorial_webapp_TutorialApp$, "tutorial.webapp.TutorialApp$", ({
-  Ltutorial_webapp_TutorialApp$: 1
-}));
-var $n_Ltutorial_webapp_TutorialApp$;
-function $m_Ltutorial_webapp_TutorialApp$() {
-  if ((!$n_Ltutorial_webapp_TutorialApp$)) {
-    $n_Ltutorial_webapp_TutorialApp$ = new $c_Ltutorial_webapp_TutorialApp$();
-  }
-  return $n_Ltutorial_webapp_TutorialApp$;
-}
 /** @constructor */
 function $c_jl_Number() {
 }
@@ -3264,6 +3321,6 @@ function $asArrayOf_scm_ListBuffer(obj, depth) {
 }
 $L0 = new $c_RTLong(0, 0);
 $d_J.zero = $L0;
-$s_Ltutorial_webapp_TutorialApp__main__AT__V(new ($d_T.getArrayOf().constr)([]));
+$s_Lkanban_MainApp__main__AT__V(new ($d_T.getArrayOf().constr)([]));
 }).call(this);
 //# sourceMappingURL=main.js.map
