@@ -1101,14 +1101,37 @@ $c_Lkanban_ProjectForm$.prototype.openAddProjectForm__V = (function() {
   var input = document.createElement("input");
   input.id = "project-name";
   input.placeholder = "Projektname eingeben";
+  var labelColumn = document.createElement("label");
+  labelColumn.textContent = "Status von dem Projekt";
+  labelColumn.id = "label-column";
+  var selectColumn = document.createElement("select");
+  selectColumn.id = "project-column";
+  var array = ["Neu", "Geplant", "In Arbeit", "Abrechenbar", "Abgeschlossen"];
+  var elems = new $c_sjsr_WrappedVarArgs(array);
+  var columns = $m_sci_Nil$().prependedAll__sc_IterableOnce__sci_List(elems);
+  var this$5 = $n(columns);
+  var these = this$5;
+  while ((!$n(these).isEmpty__Z())) {
+    var arg1 = $n(these).head__O();
+    var column = $as_T(arg1);
+    var option = document.createElement("option");
+    var this$6 = $n(column);
+    var this$7 = $n($as_T(this$6.toLowerCase()));
+    option.value = ("column-" + $as_T(this$7.split(" ").join("-")));
+    option.textContent = column;
+    selectColumn.appendChild(option);
+    these = $as_sci_List($n(these).tail__O());
+  }
   var submitButton = document.createElement("button");
   submitButton.textContent = "Hinzuf\u00fcgen";
-  submitButton.addEventListener("click", ((arg1$2) => $m_Lkanban_ProjectForm$().kanban$ProjectForm$$$anonfun$openAddProjectForm$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2, formOverlay)));
+  submitButton.addEventListener("click", ((arg1$2) => $m_Lkanban_ProjectForm$().kanban$ProjectForm$$$anonfun$openAddProjectForm$2__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2, formOverlay)));
   var cancelButton = document.createElement("button");
   cancelButton.textContent = "Abbrechen";
-  cancelButton.addEventListener("click", ((arg1$2$1) => $m_Lkanban_ProjectForm$().kanban$ProjectForm$$$anonfun$openAddProjectForm$3__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2$1, formOverlay)));
+  cancelButton.addEventListener("click", ((arg1$2$1) => $m_Lkanban_ProjectForm$().kanban$ProjectForm$$$anonfun$openAddProjectForm$4__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node(arg1$2$1, formOverlay)));
   form.appendChild(formTitle);
   form.appendChild(input);
+  form.appendChild(labelColumn);
+  form.appendChild(selectColumn);
   form.appendChild(submitButton);
   form.appendChild(cancelButton);
   formOverlay.appendChild(form);
@@ -1116,25 +1139,38 @@ $c_Lkanban_ProjectForm$.prototype.openAddProjectForm__V = (function() {
 });
 $c_Lkanban_ProjectForm$.prototype.addProject__V = (function() {
   var projectName = $as_T(document.getElementById("project-name").value);
+  var selectedColumn = $as_T(document.getElementById("project-column").value);
   var this$3 = $n(projectName);
   if ((!(this$3 === ""))) {
     var newCard = document.createElement("div");
     newCard.setAttribute("class", "kanban-card");
     newCard.textContent = projectName;
     newCard.setAttribute("draggable", "true");
+    var deleteButton = document.createElement("button");
+    deleteButton.textContent = "L\u00f6schen";
+    deleteButton.id = "delete-project-button";
+    deleteButton.addEventListener("click", ((arg1$2) => $m_Lkanban_ProjectForm$().kanban$ProjectForm$$$anonfun$addProject$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_HTMLButtonElement__Lorg_scalajs_dom_Node(arg1$2, newCard, deleteButton)));
     var neuColumn = document.getElementById("column-neu");
+    newCard.appendChild(deleteButton);
     neuColumn.appendChild(newCard);
+    newCard.setAttribute("draggable", "true");
+    var targetColumn = document.getElementById(selectedColumn);
+    targetColumn.appendChild(newCard);
     newCard.setAttribute("data-x", "0");
     newCard.setAttribute("data-y", "0");
     $m_Lkanban_DragAndDrop$().initializeDragAndDrop__Lorg_scalajs_dom_HTMLDivElement__V(newCard);
   }
 });
-$c_Lkanban_ProjectForm$.prototype.kanban$ProjectForm$$$anonfun$openAddProjectForm$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
+$c_Lkanban_ProjectForm$.prototype.kanban$ProjectForm$$$anonfun$openAddProjectForm$2__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
   $m_Lkanban_ProjectForm$().addProject__V();
   return document.body.removeChild(formOverlay$1);
 });
-$c_Lkanban_ProjectForm$.prototype.kanban$ProjectForm$$$anonfun$openAddProjectForm$3__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
+$c_Lkanban_ProjectForm$.prototype.kanban$ProjectForm$$$anonfun$openAddProjectForm$4__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_Node = (function(e, formOverlay$1) {
   return document.body.removeChild(formOverlay$1);
+});
+$c_Lkanban_ProjectForm$.prototype.kanban$ProjectForm$$$anonfun$addProject$1__Lorg_scalajs_dom_MouseEvent__Lorg_scalajs_dom_HTMLDivElement__Lorg_scalajs_dom_HTMLButtonElement__Lorg_scalajs_dom_Node = (function(e, newCard$1, deleteButton$1) {
+  newCard$1.parentNode.removeChild(newCard$1);
+  return deleteButton$1.parentNode.removeChild(deleteButton$1);
 });
 var $d_Lkanban_ProjectForm$ = new $TypeData().initClass($c_Lkanban_ProjectForm$, "kanban.ProjectForm$", ({
   Lkanban_ProjectForm$: 1
