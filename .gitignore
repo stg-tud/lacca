@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# scala build files
+.metals
+.bsp
+.scala-build
+target

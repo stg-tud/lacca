@@ -1,8 +1,0 @@
-{
-"version": 3,
-"file": "chart.-Live-Chart.js",
-"mappings": ";;;AAWA,SAAAA,gCAAA,CAAA,IAAA;;mEAAA,YAAA;WAAA,CAAA;;UAAA,KAAA,GAAAC,wDAAA,CAAA,uCAAA,CAAA,CAAA;8FAAA,iDAAA,CAAA,KAAA;;YAAA,CAAA;;;C;AAAA,SAAAD,gCAAA,uC;",
-"sources": ["file:///C:/Users/jakob/chart/src/main/scala/chart/chart.scala"],
-"names": ["main", "internal-3ebfae0cba70adf981029a0da5b1e4b5ab5d02c6"],
-"lineCount": 16
-}
