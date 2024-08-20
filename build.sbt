@@ -36,7 +36,11 @@ lazy val chart = project.in(file("."))
   // This is an application with a main method
   scalaJSUseMainModuleInitializer := true
 
-  libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.0"
+  // Dependencies
+  libraryDependencies ++= Seq(
+    "org.scala-js" %%% "scalajs-dom" % "2.8.0",
+    "com.lihaoyi" %%% "scalatags" % "0.11.1" // Note the version update
+  )
 
   scalaJSUseMainModuleInitializer := true  //new
 

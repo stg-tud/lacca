@@ -21,8 +21,11 @@
             "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\org\\scala-js\\scalajs-scalalib_2.13\\2.13.14%2B1.16.0\\scalajs-scalalib_2.13-2.13.14%2B1.16.0.jar",
             "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\org\\scala-js\\scalajs-test-bridge_2.13\\1.16.0\\scalajs-test-bridge_2.13-1.16.0.jar",
             "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\org\\scala-js\\scalajs-dom_sjs1_2.13\\2.8.0\\scalajs-dom_sjs1_2.13-2.8.0.jar",
+            "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\scalatags_sjs1_2.13\\0.11.1\\scalatags_sjs1_2.13-0.11.1.jar",
             "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\org\\scala-js\\scalajs-javalib\\1.16.0\\scalajs-javalib-1.16.0.jar",
-            "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\org\\scala-js\\scalajs-test-interface_2.13\\1.16.0\\scalajs-test-interface_2.13-1.16.0.jar"
+            "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\org\\scala-js\\scalajs-test-interface_2.13\\1.16.0\\scalajs-test-interface_2.13-1.16.0.jar",
+            "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\sourcecode_sjs1_2.13\\0.2.7\\sourcecode_sjs1_2.13-0.2.7.jar",
+            "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\geny_sjs1_2.13\\0.6.10\\geny_sjs1_2.13-0.6.10.jar"
         ],
         "out": "C:\\Users\\ducba\\Desktop\\Work STG\\lacca\\.bloop\\lacca",
         "classesDir": "C:\\Users\\ducba\\Desktop\\Work STG\\lacca\\.bloop\\lacca\\scala-2.13\\test-classes",
@@ -205,6 +208,23 @@
                     ]
                 },
                 {
+                    "organization": "com.lihaoyi",
+                    "name": "scalatags_sjs1_2.13",
+                    "version": "0.11.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatags_sjs1_2.13",
+                            "path": "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\scalatags_sjs1_2.13\\0.11.1\\scalatags_sjs1_2.13-0.11.1.jar"
+                        },
+                        {
+                            "name": "scalatags_sjs1_2.13",
+                            "classifier": "sources",
+                            "path": "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\scalatags_sjs1_2.13\\0.11.1\\scalatags_sjs1_2.13-0.11.1-sources.jar"
+                        }
+                    ]
+                },
+                {
                     "organization": "org.scala-js",
                     "name": "scalajs-javalib",
                     "version": "1.16.0",
@@ -218,6 +238,40 @@
                             "name": "scalajs-javalib",
                             "classifier": "sources",
                             "path": "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\org\\scala-js\\scalajs-javalib\\1.16.0\\scalajs-javalib-1.16.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "sourcecode_sjs1_2.13",
+                    "version": "0.2.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "sourcecode_sjs1_2.13",
+                            "path": "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\sourcecode_sjs1_2.13\\0.2.7\\sourcecode_sjs1_2.13-0.2.7.jar"
+                        },
+                        {
+                            "name": "sourcecode_sjs1_2.13",
+                            "classifier": "sources",
+                            "path": "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\sourcecode_sjs1_2.13\\0.2.7\\sourcecode_sjs1_2.13-0.2.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "geny_sjs1_2.13",
+                    "version": "0.6.10",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "geny_sjs1_2.13",
+                            "path": "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\geny_sjs1_2.13\\0.6.10\\geny_sjs1_2.13-0.6.10.jar"
+                        },
+                        {
+                            "name": "geny_sjs1_2.13",
+                            "classifier": "sources",
+                            "path": "C:\\Users\\ducba\\AppData\\Local\\Coursier\\Cache\\v1\\https\\repo1.maven.org\\maven2\\com\\lihaoyi\\geny_sjs1_2.13\\0.6.10\\geny_sjs1_2.13-0.6.10-sources.jar"
                         }
                     ]
                 },
