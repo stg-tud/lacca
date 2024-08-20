@@ -5,6 +5,7 @@ import org.scalajs.dom.document
 import org.scalajs.dom.html.{Input, Select}
 import scalatags.JsDom.all._
 
+
 object ProjectForm {
   def openAddProjectForm(): Unit = {
     // Create form using ScalaTags
@@ -32,6 +33,7 @@ object ProjectForm {
     // Append the formOverlay to the document body
     document.body.appendChild(formOverlay)
 
+
     // Add event listeners
     dom.document.getElementById("submit-button").addEventListener("click", { (e: dom.MouseEvent) =>
       addProject()
@@ -41,10 +43,12 @@ object ProjectForm {
     dom.document.getElementById("cancel-button").addEventListener("click", { (e: dom.MouseEvent) =>
       document.body.removeChild(formOverlay)
     })
+
   }
 
   def addProject(): Unit = {
     val projectName = document.getElementById("project-name").asInstanceOf[Input].value
+
     val selectedColumn = document.getElementById("project-column").asInstanceOf[Select].value
     if (projectName.nonEmpty) {
       // Create the new Kanban card using ScalaTags
@@ -68,6 +72,7 @@ object ProjectForm {
         newCard.parentNode.removeChild(newCard)
       })
 
+
       // Set initial data-x and data-y attributes for drag position
       newCard.setAttribute("draggable", "true")
       newCard.setAttribute("data-x", "0")
@@ -77,4 +82,20 @@ object ProjectForm {
       DragAndDrop.initializeDragAndDrop(newCard)
     }
   }
-}
+
+  // Helper function to format the date
+  def formatDate(date: String): String = {
+    val parts = date.split("-")
+    if (parts.length == 3) {
+      s"${parts(2)}.${parts(1)}.${parts(0)}"
+    } else {
+      date // Return original if the format is unexpected
+    }
+  }
+} //
+
+
+
+
+
+  
