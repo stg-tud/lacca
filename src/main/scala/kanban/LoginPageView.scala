@@ -3,7 +3,7 @@ package kanban
 import kanban.Router.*
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
-
+import kanban.Pages.*
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
@@ -17,9 +17,9 @@ object LoginPageView {
       h2("Login"),
       form(
         onSubmit.preventDefault.mapTo(()) --> { _ =>
-          messageVar.set("Incorrect credentials")
-        //TODO: after we have a view for the taskboard page ready,
-        //redirect to taskboard page when this button is clicked.
+          // messageVar.set("Incorrect credentials")
+          // TODO: only allow after credentials match
+          Router.pushState(KanbanBoardPage)
         },
         div(
           className := "form-group",

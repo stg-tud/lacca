@@ -8,6 +8,7 @@ object Pages {
 
   case object LoginPage extends Page("Login")
   case object SignupPage extends Page("Sign Up")
+  case object KanbanBoardPage extends Page("Kanban Board")
 
   given pageCodec: Codec[Page] = deriveAllCodecs
 }
