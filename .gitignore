@@ -13,6 +13,7 @@ dist-ssr
 *.local
 
 # Editor directories and files
+.vscode
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -27,5 +28,8 @@ dist-ssr
 .metals
 .bsp
 .scala-build
+.bloop
 
 target
+project/project
+project/.bloop
