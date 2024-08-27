@@ -146,5 +146,77 @@ body {
   align-items: center;
 }
 
-
 /**/
+
+#add-project-form-overlay,
+#detailed-form-overlay,
+#filter-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#add-project-form,
+#detailed-form,
+#filter-form {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  text-align: center;
+}
+
+#add-project-form input,
+#detailed-form input,
+#filter-form input {
+  width: calc(100% - 1rem); 
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  margin-top: 0.2rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+#add-project-form button,
+#detailed-form button,
+#filter-form button {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+#add-project-form button:first-child,
+#detailed-form button:first-child,
+#filter-form button:first-child {
+  background-color: #28a745;
+  color: #ffffff;
+}
+
+#add-project-form button:first-child:hover,
+#detailed-form button:first-child:hover,
+#filter-form button:first-child:hover {
+  background-color: #218838;
+}
+
+#add-project-form button:last-child,
+#detailed-form button:last-child,
+#filter-form button:last-child {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+#add-project-form button:last-child:hover,
+#detailed-form button:last-child:hover,
+#filter-form button:last-child:hover {
+  background-color: #c82333;
+}
