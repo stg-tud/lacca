@@ -34,6 +34,11 @@ object KanbanBoardPageView {
             )
           )
         }
+      ),
+      //TODO:add "projekt hinzufuegen button here"
+      button(
+        idAttr := "add-project-button",
+        "projekt hinzufügen"
       )
     )
   }
