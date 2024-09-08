@@ -13,7 +13,7 @@ object LoginPageView {
     val messageVar = Var("")
 
     val loginFormElement = div(
-      className := "logi-form-container",
+      className := "login-form-container",
       h2("Login"),
       form(
         onSubmit.preventDefault.mapTo(()) --> { _ =>
