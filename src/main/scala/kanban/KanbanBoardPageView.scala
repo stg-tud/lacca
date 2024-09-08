@@ -66,12 +66,10 @@ object KanbanBoardPageView {
 
   def addNewProject(project: Project): Unit = {
     projectList.update(list => list :+ project)
-    println("project saved")
   }
 
   def removeProject(projectName: String): Unit = {
     projectList.update(list => list.filter(_.name != projectName))
-    println("project removed!!!")
   }
 
   def renderProjectCard(projectName: String): HtmlElement = {
