@@ -4,10 +4,22 @@ import org.scalajs.dom
 import org.scalajs.dom.document
 import kanban.NavBar
 import com.raquo.laminar.api.L.{*, given}
+import kanban.DragAndDrop.*
+import com.raquo.laminar.api.features.unitArrows
+import kanban.AddProjectFormView.*
+import kanban.Pages.*
+import kanban.models.*
 
 object KanbanBoardPageView {
+  val toggleDisplay: Var[String] = Var("none")
+  val projectList: Var[List[Project]] = Var(List[Project]())
+  val projectStatusValues: List[String] =
+    ProjectStatus.values.map(_.toString).toList
+
   def apply(): HtmlElement = {
-    div(
+    setupDragAndDrop()
+    val kanbanElement = div(
+      idAttr := "kanbanboard-container",
       NavBar(),
       //date filter
       input(
@@ -18,94 +30,60 @@ object KanbanBoardPageView {
       //kanban board view
       div(
         idAttr := "kanban-board",
-        List(
-          "Neu",
-          "Geplant",
-          "In Arbeit",
-          "Abrechenbar",
-          "Abgeschlossen"
-        ).map { columnTitle =>
+        projectStatusValues.map { columnTitle =>
           div(
             cls := "kanban-column",
             h3(cls := "kanban-column-header", columnTitle),
             div(
               cls := "kanban-column-content",
-              idAttr := s"column-${columnTitle.toLowerCase.replace(" ", "-")}"
+              idAttr := s"column-${columnTitle}",
+              children <-- projectList.signal.map(list => {
+                list.filter(_.status.toString() == columnTitle).map(p => {
+                  renderProjectCard(p.name)
+                })
+              })
             )
           )
         }
       ),
-      //TODO:add "projekt hinzufuegen button here"
       button(
         idAttr := "add-project-button",
-        "projekt hinzufügen"
+        "projekt hinzufügen",
+        onClick --> { e =>
+          {
+            toggleDisplay.update(t => "")
+          }
+        }
+      ),
+      div(
+        idAttr := "form-overlay",
+        display <-- toggleDisplay,
+        AddProjectFormView()
+      )
+    )
+    kanbanElement
+  }
+
+  def addNewProject(project: Project): Unit = {
+    projectList.update(list => list :+ project)
+    println("project saved")
+  }
+
+  def removeProject(projectName: String): Unit = {
+    projectList.update(list => list.filter(_.name != projectName))
+    println("project removed!!!")
+  }
+
+  def renderProjectCard(projectName: String): HtmlElement = {
+    div(
+      className := "kanban-card",
+      projectName,
+      button(
+        className := "delete-project-button",
+        "Löschen",
+        onClick --> (_ => removeProject(projectName))
       )
     )
   }
 }
 
-//following is old code written using scalatags
-
-// def setupUI(): Unit = {
-//   // Create navigation bar using ScalaTags
-//   val navBar = div(id := "nav-bar")(
-//     for (
-//       linkText <- List(
-//         "Kanzleiboard",
-//         "Kalkulationen",
-//         "Angebote",
-//         "Rechnungen",
-//         "Controlling",
-//         "Zeiten",
-//         "Einstellungen"
-//       )
-//     ) yield {
-//       a(cls := "nav-link", href := s"#${linkText.toLowerCase}")(linkText)
-//     }
-//   ).render
-
-//   document.body.appendChild(navBar)
-
-//   // Create filter input
-//   val filterInput = input(
-//     `type` := "date",
-//     id := "start",
-//     placeholder := "Zeitraum"
-//   ).render
-
-//   // Attach the input box to the document
-//   document.body.appendChild(filterInput)
-
-//   // Create Kanban board using ScalaTags
-//   val kanbanBoard = div(id := "kanban-board")(
-//     for (
-//       columnTitle <- List(
-//         "Neu",
-//         "Geplant",
-//         "In Arbeit",
-//         "Abrechenbar",
-//         "Abgeschlossen"
-//       )
-//     ) yield {
-//       div(cls := "kanban-column")(
-//         h3(cls := "kanban-column-header")(columnTitle),
-//         div(
-//           cls := "kanban-column-content",
-//           id := s"column-${columnTitle.toLowerCase.replace(" ", "-")}"
-//         )
-//       )
-//     }
-//   ).render
-
-//   document.body.appendChild(kanbanBoard)
-
-//   // Create "Projekt hinzufügen" button using ScalaTags
-//   val addButton =
-//     button(id := "add-project-button")("Projekt hinzufügen").render
-//   addButton.onclick = { (e: dom.MouseEvent) =>
-//     ProjectForm.openAddProjectForm()
-//   }
-
-//   document.body.appendChild(addButton)
-// }
-//}
