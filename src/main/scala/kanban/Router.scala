@@ -1,11 +1,11 @@
 package kanban
 
-import kanban.Pages.Page
-import kanban.routes
 import com.raquo.laminar.api.L.*
 import com.raquo.waypoint
 import io.bullet.borer.*
-import org.scalajs.dom
+import kanban.Pages.Page
+import kanban.routes
+
 import java.nio.charset.StandardCharsets
 
 object Router
