@@ -9,6 +9,9 @@ import com.raquo.laminar.api.features.unitArrows
 
 object AddProjectFormView {
   val projectName = Var("")
+  val revisor = Var(Revisors.Manas.toString())
+  val revisorValues: List[String] = 
+    Revisors.values.map(_.toString).toList
   val projectStatus = Var(ProjectStatus.Neu.toString())
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
@@ -39,6 +42,21 @@ object AddProjectFormView {
             )
           )
         ),
+        br(),
+        label(
+          "Bearbeiter",
+          select(
+            idAttr := "revisors",
+            value <-- revisor.signal.map(_.toString),
+            onChange.mapToValue --> revisor,
+            revisorValues.map(revisorName =>
+              option(
+                value := revisorName,
+                revisorName
+              )
+            )
+          )
+        ),
         button(
           typ := "submit",
           idAttr := "submit-button",
@@ -49,7 +67,8 @@ object AddProjectFormView {
               KanbanBoardPageView.addNewProject(
                 Project(
                   projectName.now(),
-                  ProjectStatus.valueOf(projectStatus.now())
+                  ProjectStatus.valueOf(projectStatus.now()),
+                  Revisors.valueOf(revisor.now())
                 )
               )
             }

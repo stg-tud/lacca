@@ -15,6 +15,8 @@ object KanbanBoardPageView {
   val projectList: Var[List[Project]] = Var(List[Project]())
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
+  val revisors: List[String] = List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+  val selectedRevisorVar = Var("Bearbeiter")
 
   def apply(): HtmlElement = {
     setupDragAndDrop()
@@ -27,7 +29,17 @@ object KanbanBoardPageView {
         idAttr := "start",
         placeholder := "Zeitraum"
       ),
-      //kanban board view
+      // Revisor filter
+      select(
+        idAttr := "revisor",
+        // Populate the dropdown options based on the `revisors` list
+        revisors.map(revisor => 
+          if (revisor == "Bearbeiter") option(value := revisor, revisor, selected := true)
+          else option(value := revisor, revisor)),
+        onChange.mapToValue --> { value =>
+          selectedRevisorVar.set(value) // Update the selected revisor variable
+        }
+      ),
       div(
         idAttr := "kanban-board",
         projectStatusValues.map { columnTitle =>
@@ -37,11 +49,13 @@ object KanbanBoardPageView {
             div(
               cls := "kanban-column-content",
               idAttr := s"column-${columnTitle}",
-              children <-- projectList.signal.map(list => {
-                list.filter(_.status.toString() == columnTitle).map(p => {
-                  renderProjectCard(p.name)
-                })
-              })
+              children <-- projectList.signal.combineWith(selectedRevisorVar.signal).map {
+                case (list, selectedRevisor) =>
+                  list
+                    .filter(p => p.status.toString == columnTitle) // Filter by status (column)
+                    .filter(p => selectedRevisor == "Bearbeiter" || p.revisor.toString == selectedRevisor) // Filter by revisor
+                    .map(p => renderProjectCard(p.name, p.revisor)) // Render project cards
+              }
             )
           )
         }
@@ -72,7 +86,7 @@ object KanbanBoardPageView {
     projectList.update(list => list.filter(_.name != projectName))
   }
 
-  def renderProjectCard(projectName: String): HtmlElement = {
+  def renderProjectCard(projectName: String, revisorName: Revisors): HtmlElement = {
     div(
       className := "kanban-card",
       projectName,
@@ -80,7 +94,8 @@ object KanbanBoardPageView {
         className := "delete-project-button",
         "Löschen",
         onClick --> (_ => removeProject(projectName))
-      )
+      ),
+      revisorName.toString
     )
   }
 }
