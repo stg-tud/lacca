@@ -16,7 +16,7 @@ Create a terminal window
 
 ```bash
   sbt
-  sbt:livechart> ~fastLinkJS
+  sbt:kanban> ~fastLinkJS
 ```
 
 Create another terminal window

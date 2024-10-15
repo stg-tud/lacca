@@ -6,9 +6,11 @@ import com.raquo.laminar.api.L.{*, given}
 import kanban.KanbanBoardPageView.*
 import kanban.models.*
 import com.raquo.laminar.api.features.unitArrows
+import scala.scalajs.js.Date
 
 object AddProjectFormView {
   val projectName = Var("")
+  val deadline = Var(Option.empty[Date])
   val revisor = Var(Revisors.Manas.toString())
   val revisorValues: List[String] = 
     Revisors.values.map(_.toString).toList
@@ -57,6 +59,21 @@ object AddProjectFormView {
             )
           )
         ),
+        br(),
+        label(
+          "Fälligkeitsdatum",
+          input(
+            typ := "date",
+            idAttr := "deadline",
+            onInput.mapToValue --> { dateStr =>
+              if (dateStr.nonEmpty) {
+                deadline.set(Some(new Date(dateStr))) // Set deadline as a Date object
+              } else {
+                deadline.set(None) // No deadline selected
+              }
+            }
+          )
+        ),
         button(
           typ := "submit",
           idAttr := "submit-button",
@@ -68,8 +85,9 @@ object AddProjectFormView {
                 Project(
                   projectName.now(),
                   ProjectStatus.valueOf(projectStatus.now()),
-                  Revisors.valueOf(revisor.now())
-                )
+                  Revisors.valueOf(revisor.now()),
+                  deadline.now()
+                  )
               )
             }
           }

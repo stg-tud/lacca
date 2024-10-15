@@ -9,6 +9,7 @@ import com.raquo.laminar.api.features.unitArrows
 import kanban.AddProjectFormView.*
 import kanban.Pages.*
 import kanban.models.*
+import scala.scalajs.js.Date
 
 object KanbanBoardPageView {
   val toggleDisplay: Var[String] = Var("none")
@@ -17,17 +18,23 @@ object KanbanBoardPageView {
     ProjectStatus.values.map(_.toString).toList
   val revisors: List[String] = List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
   val selectedRevisorVar = Var("Bearbeiter")
+  val selectedDeadlineVar = Var(Option.empty[Date])
 
   def apply(): HtmlElement = {
     setupDragAndDrop()
     val kanbanElement = div(
       idAttr := "kanbanboard-container",
       NavBar(),
-      //date filter
+      // Date filter
       input(
-        typ := "date",
-        idAttr := "start",
-        placeholder := "Zeitraum"
+        typ := "date", // Input field for date selection
+        onInput.mapToValue --> { dateStr =>
+          if (dateStr.nonEmpty) {
+            selectedDeadlineVar.set(Some(new Date(dateStr))) // Set the selected deadline as a Date
+          } else {
+            selectedDeadlineVar.set(None) // No date selected
+          }
+        }
       ),
       // Revisor filter
       select(
@@ -49,12 +56,18 @@ object KanbanBoardPageView {
             div(
               cls := "kanban-column-content",
               idAttr := s"column-${columnTitle}",
-              children <-- projectList.signal.combineWith(selectedRevisorVar.signal).map {
-                case (list, selectedRevisor) =>
+              children <-- projectList.signal.combineWith(selectedRevisorVar.signal, selectedDeadlineVar.signal).map {
+                (list: List[Project], selectedRevisor: String, selectedDeadline: Option[Date]) =>
                   list
                     .filter(p => p.status.toString == columnTitle) // Filter by status (column)
                     .filter(p => selectedRevisor == "Bearbeiter" || p.revisor.toString == selectedRevisor) // Filter by revisor
-                    .map(p => renderProjectCard(p.name, p.revisor)) // Render project cards
+                    .filter { p =>
+                      // Ensure p.deadline is defined and compare it with the selectedDeadline
+                      p.deadline.exists(deadlineDate =>
+                        selectedDeadline.forall(selectedDate => deadlineDate.getTime() == selectedDate.getTime())
+                      )
+                    }
+                    .map(p => renderProjectCard(p.name, p.revisor, p.deadline)) // Render project cards
               }
             )
           )
@@ -86,7 +99,7 @@ object KanbanBoardPageView {
     projectList.update(list => list.filter(_.name != projectName))
   }
 
-  def renderProjectCard(projectName: String, revisorName: Revisors): HtmlElement = {
+  def renderProjectCard(projectName: String, revisorName: Revisors, deadline: Option[Date]): HtmlElement = {
     div(
       className := "kanban-card",
       projectName,
@@ -95,8 +108,21 @@ object KanbanBoardPageView {
         "Löschen",
         onClick --> (_ => removeProject(projectName))
       ),
+      br(),
+      formatDate(deadline),
+      br(),
       revisorName.toString
     )
+  }
+
+  // Function to format the Date as "YYYY-MM-DD"
+  def formatDate(date: Option[Date]): String = {
+    if (date.nonEmpty) {
+            val convertedDate: Date = date.getOrElse(new Date())
+            convertedDate.toLocaleDateString() // Formats as "YYYY-MM-DD"
+    } else {
+            ""
+    }
   }
 }
 
