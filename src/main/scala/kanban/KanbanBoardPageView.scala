@@ -62,11 +62,13 @@ object KanbanBoardPageView {
                     .filter(p => p.status.toString == columnTitle) // Filter by status (column)
                     .filter(p => selectedRevisor == "Bearbeiter" || p.revisor.toString == selectedRevisor) // Filter by revisor
                     .filter { p =>
-                      // Ensure p.deadline is defined and compare it with the selectedDeadline
-                      p.deadline.exists(deadlineDate =>
-                        selectedDeadline.forall(selectedDate => deadlineDate.getTime() == selectedDate.getTime())
-                      )
-                    }
+                      selectedDeadline match {
+                        case Some(selectedDate) =>
+                          p.deadline.exists(_.getTime() == selectedDate.getTime()) // Only projects with a matching deadline appear
+                        case None =>
+                          true // No deadline filter selected, show all projects
+                          }
+                        }
                     .map(p => renderProjectCard(p.name, p.revisor, p.deadline)) // Render project cards
               }
             )
