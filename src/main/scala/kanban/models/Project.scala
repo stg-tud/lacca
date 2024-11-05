@@ -9,9 +9,9 @@ enum Revisors:
     case Manas, Jakob, Julian, Bach
 
 case class Project(
-    var name: String, 
-    var status: ProjectStatus, 
-    var revisor: Revisors, 
-    var deadline: Option[Date],
-    var timeTracked: Double
+    val name: String,
+    val status: ProjectStatus,
+    val revisor: Revisors,
+    val deadline: Option[Date],
+    val timeTracked: Double
     )
