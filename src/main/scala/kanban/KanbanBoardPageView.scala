@@ -21,7 +21,17 @@ object KanbanBoardPageView {
   val selectedDeadlineVar = Var(Option.empty[Date])
 
   def apply(): HtmlElement = {
-    setupDragAndDrop()
+    // Function to update project status
+    def updateProjectStatus(projectName: String, newStatus: String): Unit = {
+      projectList.update { projects =>
+        val updatedProjects = projects.map { project =>
+          if (project.name == projectName) project.copy(status = ProjectStatus.valueOf(newStatus))
+          else project
+        }
+      updatedProjects
+    }
+    }
+    setupDragAndDrop(updateProjectStatus, projectList)
     val kanbanElement = div(
       idAttr := "kanbanboard-container",
       NavBar(),
@@ -69,7 +79,7 @@ object KanbanBoardPageView {
                           true // No deadline filter selected, show all projects
                           }
                         }
-                    .map(p => renderProjectCard(p.name, p.revisor, p.deadline)) // Render project cards
+                    .map(p => renderProjectCard(p.name, p.status, p.revisor, p.deadline)) // Render project cards
               }
             )
           )
@@ -101,7 +111,7 @@ object KanbanBoardPageView {
     projectList.update(list => list.filter(_.name != projectName))
   }
 
-  def renderProjectCard(projectName: String, revisorName: Revisors, deadline: Option[Date]): HtmlElement = {
+  def renderProjectCard(projectName: String, status: ProjectStatus, revisorName: Revisors, deadline: Option[Date]): HtmlElement = {
     div(
       className := "kanban-card",
       projectName,
@@ -113,7 +123,8 @@ object KanbanBoardPageView {
       br(),
       formatDate(deadline),
       br(),
-      revisorName.toString
+      revisorName.toString,
+      dataAttr("name") := projectName
     )
   }
 

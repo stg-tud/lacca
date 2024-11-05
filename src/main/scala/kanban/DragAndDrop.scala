@@ -2,9 +2,11 @@ package kanban
 
 import org.scalajs.dom.html.Div
 import scala.scalajs.js
+import com.raquo.laminar.api.L.Var
+import kanban.models.Project // Adjust the path if necessary
 
 object DragAndDrop {
-  def setupDragAndDrop(): Unit = {
+  def setupDragAndDrop(updateProjectStatus: (String, String) => Unit, projectList: Var[List[Project]]): Unit = {
     js.Dynamic.global.interact(".kanban-card").draggable(js.Dynamic.literal(
       inertia = true,
       autoScroll = true,
@@ -31,6 +33,21 @@ object DragAndDrop {
         val draggableElement = event.relatedTarget.asInstanceOf[Div]
         val dropzoneElement = event.target.asInstanceOf[Div]
         dropzoneElement.appendChild(draggableElement)
+        // Get the id attribute of dropzoneElement and remove the "column-" prefix
+        val idAttr = dropzoneElement.id.replace("column-", "")
+        println(s"Dropzone Status: $idAttr")
+        val newStatus = idAttr
+        val projectName = draggableElement.getAttribute("data-name")
+        
+        //right now it does not work so I comment it out
+        //updateProjectStatus(projectName, newStatus)
+
+        // Print the updated project list after the update
+        println("Project list after drag-and-drop:")
+        projectList.now().foreach { project =>
+          println(s"Project Name: ${project.name}, Status: ${project.status}, Revisor: ${project.revisor}, Deadline: ${project.deadline}")
+        }
+
         draggableElement.setAttribute("data-x", "0")
         draggableElement.setAttribute("data-y", "0")
         draggableElement.style.transform = "translate(0, 0)"
