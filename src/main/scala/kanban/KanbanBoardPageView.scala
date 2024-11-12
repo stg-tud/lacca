@@ -19,12 +19,63 @@ object KanbanBoardPageView {
   val revisors: List[String] = List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
   val selectedRevisorVar = Var("Bearbeiter")
   val selectedDeadlineVar = Var(Option.empty[Date])
+  val showKanbanBoard: Var[Boolean] = Var(true) // Initially, the Kanban board is shown
+  val selectedProjectVar: Var[Option[Project]] = Var(None)
 
   def apply(): HtmlElement = {
+    div(
+      NavBar(),
+      child <-- showKanbanBoard.signal.map { showKanban =>
+        if (showKanban) renderKanbanBoard()
+        else renderProjectDetails()
+      }
+    )
+  }
+
+  def addNewProject(project: Project): Unit = {
+    projectList.update(list => list :+ project)
+  }
+
+  def removeProject(projectName: String): Unit = {
+    projectList.update(list => list.filter(_.name != projectName))
+  }
+
+  def renderProjectCard(projectName: String, status: ProjectStatus, revisorName: Revisors, deadline: Option[Date]): HtmlElement = {
+    div(
+      className := "kanban-card",
+      projectName,
+      button(
+        className := "delete-project-button",
+        "Löschen",
+        onClick --> (_ => removeProject(projectName))
+      ),
+      br(),
+      formatDate(deadline),
+      br(),
+      revisorName.toString,
+      onClick --> { _ =>
+        // Handle the click and set the selected project for details view
+        val selectedProject = Project(projectName, status, revisorName, deadline)
+        selectedProjectVar.set(Some(selectedProject))
+        showKanbanBoard.set(false) // Hide Kanban board and show project details
+      }
+    )
+  }
+
+  // Function to format the Date as "YYYY-MM-DD"
+  def formatDate(date: Option[Date]): String = {
+    if (date.nonEmpty) {
+            val convertedDate: Date = date.getOrElse(new Date())
+            convertedDate.toLocaleDateString() // Formats as "YYYY-MM-DD"
+    } else {
+            ""
+    }
+  }
+
+  def renderKanbanBoard(): HtmlElement = {
     setupDragAndDrop()
     val kanbanElement = div(
       idAttr := "kanbanboard-container",
-      NavBar(),
       // Date filter
       input(
         typ := "date", // Input field for date selection
@@ -69,7 +120,7 @@ object KanbanBoardPageView {
                           true // No deadline filter selected, show all projects
                           }
                         }
-                    .map(p => renderProjectCard(p.name, p.revisor, p.deadline)) // Render project cards
+                    .map(p => renderProjectCard(p.name, p.status, p.revisor, p.deadline)) // Render project cards
               }
             )
           )
@@ -93,38 +144,13 @@ object KanbanBoardPageView {
     kanbanElement
   }
 
-  def addNewProject(project: Project): Unit = {
-    projectList.update(list => list :+ project)
-  }
-
-  def removeProject(projectName: String): Unit = {
-    projectList.update(list => list.filter(_.name != projectName))
-  }
-
-  def renderProjectCard(projectName: String, revisorName: Revisors, deadline: Option[Date]): HtmlElement = {
+  def renderProjectDetails(): HtmlElement = {
     div(
-      className := "kanban-card",
-      projectName,
-      button(
-        className := "delete-project-button",
-        "Löschen",
-        onClick --> (_ => removeProject(projectName))
-      ),
-      br(),
-      formatDate(deadline),
-      br(),
-      revisorName.toString
+      child <-- selectedProjectVar.signal.map {
+        case Some(project) => ProjectDetailsPageView(project)
+        case None => div("No project selected") // Message or empty div if no project is selected
+      }
     )
-  }
-
-  // Function to format the Date as "YYYY-MM-DD"
-  def formatDate(date: Option[Date]): String = {
-    if (date.nonEmpty) {
-            val convertedDate: Date = date.getOrElse(new Date())
-            convertedDate.toLocaleDateString() // Formats as "YYYY-MM-DD"
-    } else {
-            ""
-    }
   }
 }
 

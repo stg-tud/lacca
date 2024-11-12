@@ -1,0 +1,104 @@
+package kanban
+
+import com.raquo.laminar.api.L._
+import kanban.models.*
+import scala.scalajs.js.Date
+
+object ProjectDetailsPageView {
+  val revisors: List[String] = List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+  val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
+
+  // Function to render the project details page
+  def apply(project: Project): HtmlElement = {
+    // Temporary variables to hold the edited values
+    val editedRevisorVar = Var(project.revisor.toString)
+    val editedStatusVar = Var(project.status.toString)
+    val editedDeadlineVar = Var(project.deadline)
+
+    div(
+      cls := "project-details",
+      h2(project.name),
+      
+      // Editable status dropdown
+      div(
+        cls := "project-detail",
+        span(cls := "project-detail-label", "Status: "),
+        select(
+          statusValues.map(status =>
+            option(value := status, status, selected := (status == project.status.toString))
+          ),
+          onChange.mapToValue --> editedStatusVar.set
+        )
+      ),
+      
+      // Editable revisor dropdown
+      div(
+        cls := "project-detail",
+        span(cls := "project-detail-label", "Bearbeiter: "),
+        select(
+          revisors.map(revisor =>
+            option(value := revisor, revisor, selected := (revisor == project.revisor.toString))
+          ),
+          onChange.mapToValue --> editedRevisorVar.set
+        )
+      ),
+      
+      // Editable deadline input (date picker)
+      div(
+        cls := "project-detail",
+        span(cls := "project-detail-label", "Fälligkeitsdatum: "),
+        input(
+          typ := "date",
+          value := project.deadline.map(_.toISOString().slice(0, 10)).getOrElse(""), // Format date as "YYYY-MM-DD"
+          onInput.mapToValue --> { dateStr =>
+            if (dateStr.nonEmpty) {
+              editedDeadlineVar.set(Some(new Date(dateStr)))
+            } else {
+              editedDeadlineVar.set(None)
+            }
+          }
+        )
+      ),
+
+      // Save button to apply changes
+      button(
+        cls := "save-button",
+        "Speichern",
+        onClick --> { _ =>
+          // Update the project in the main list with new values
+          KanbanBoardPageView.projectList.update { list =>
+            list.map { p =>
+              if (p.name == project.name) {
+                p.copy(
+                  revisor = Revisors.valueOf(editedRevisorVar.now()),
+                  status = ProjectStatus.valueOf(editedStatusVar.now()),
+                  deadline = editedDeadlineVar.now()
+                )
+              } else p
+            }
+          }
+          // Go back to Kanban view after saving
+          KanbanBoardPageView.showKanbanBoard.set(true)
+          KanbanBoardPageView.selectedProjectVar.set(None) // Clear selected project
+        }
+      ),
+      
+      // Back button to return to Kanban board
+      button(
+        cls := "back-button",
+        "Zurück",
+        onClick --> { _ =>
+          // Set the view back to Kanban board
+          KanbanBoardPageView.showKanbanBoard.set(true)
+          KanbanBoardPageView.selectedProjectVar.set(None) // Clear selected project
+        }
+      )
+    )
+  }
+
+  // Helper function to format dates as "YYYY-MM-DD"
+  private def formatDate(date: Option[Date]): String = {
+    date.map(_.toLocaleDateString()).getOrElse("Keine Fälligkeitsdatum")
+  }
+}
+
