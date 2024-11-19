@@ -40,7 +40,9 @@ object KanbanBoardPageView {
     projectList.update(list => list.filter(_.name != projectName))
   }
 
-  def renderProjectCard(projectName: String, status: ProjectStatus, revisorName: Revisors, deadline: Option[Date]): HtmlElement = {
+  def renderProjectCard(
+    projectName: String, status: ProjectStatus, revisorName: Revisors, deadline: Option[Date], timeTracked: Double
+    ): HtmlElement = {
     div(
       className := "kanban-card",
       projectName,
@@ -55,7 +57,7 @@ object KanbanBoardPageView {
       revisorName.toString,
       onClick --> { _ =>
         // Handle the click and set the selected project for details view
-        val selectedProject = Project(projectName, status, revisorName, deadline)
+        val selectedProject = Project(projectName, status, revisorName, deadline, timeTracked)
         selectedProjectVar.set(Some(selectedProject))
         showKanbanBoard.set(false) // Hide Kanban board and show project details
       }
@@ -120,7 +122,7 @@ object KanbanBoardPageView {
                           true // No deadline filter selected, show all projects
                           }
                         }
-                    .map(p => renderProjectCard(p.name, p.status, p.revisor, p.deadline)) // Render project cards
+                    .map(p => renderProjectCard(p.name, p.status, p.revisor, p.deadline, p.timeTracked)) // Render project cards
               }
             )
           )

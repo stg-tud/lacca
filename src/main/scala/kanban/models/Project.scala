@@ -8,4 +8,10 @@ enum ProjectStatus:
 enum Revisors:
     case Manas, Jakob, Julian, Bach
 
-case class Project(var name: String, var status: ProjectStatus, var revisor: Revisors, var deadline: Option[Date])
+case class Project(
+    var name: String, 
+    var status: ProjectStatus, 
+    var revisor: Revisors, 
+    var deadline: Option[Date],
+    var timeTracked: Double
+    )

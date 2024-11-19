@@ -17,6 +17,7 @@ object AddProjectFormView {
   val projectStatus = Var(ProjectStatus.Neu.toString())
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
+  val timeTracked = Var(0.0)
 
   def apply(): HtmlElement = {
     div(
@@ -86,7 +87,8 @@ object AddProjectFormView {
                   projectName.now(),
                   ProjectStatus.valueOf(projectStatus.now()),
                   Revisors.valueOf(revisor.now()),
-                  deadline.now()
+                  deadline.now(),
+                  timeTracked.now()
                   )
               )
             }

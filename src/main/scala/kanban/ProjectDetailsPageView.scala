@@ -14,6 +14,8 @@ object ProjectDetailsPageView {
     val editedRevisorVar = Var(project.revisor.toString)
     val editedStatusVar = Var(project.status.toString)
     val editedDeadlineVar = Var(project.deadline)
+    val isTimeTrackingSidebarVisible = Var(false)
+    val timeInFormVar = Var(0.0)
 
     div(
       cls := "project-details",
@@ -60,6 +62,28 @@ object ProjectDetailsPageView {
         )
       ),
 
+      // Display total time tracked for this project
+      div(
+        cls := "project-detail",
+        span(cls := "project-detail-label", "Total Time Tracked: "),
+        span(
+          child.text <-- Var(project.timeTracked).signal.map(time => f"$time%.2f hours")
+        )
+      ),
+
+      // Button to open the time tracking sidebar
+      button(
+        cls := "time-tracking-button",
+        "Zeiterfassung",
+        onClick --> { _ => isTimeTrackingSidebarVisible.set(true) }
+      ),
+
+      // Conditionally render the sidebar
+      child.maybe <-- isTimeTrackingSidebarVisible.signal.map {
+        case true => Some(renderTimeTrackingSidebar(timeInFormVar, isTimeTrackingSidebarVisible, project))
+        case false => None
+      },
+
       // Save button to apply changes
       button(
         cls := "save-button",
@@ -99,6 +123,68 @@ object ProjectDetailsPageView {
   // Helper function to format dates as "YYYY-MM-DD"
   private def formatDate(date: Option[Date]): String = {
     date.map(_.toLocaleDateString()).getOrElse("Keine Fälligkeitsdatum")
+  }
+
+  // Function to render the time tracking form
+  private def renderTimeTrackingSidebar(
+    timeInFormVar: Var[Double], isTimeTrackingSidebarVisible: Var[Boolean], project: Project
+    ): HtmlElement = {
+    div(
+      cls := "time-tracking-sidebar",
+      div(
+        cls := "sidebar-header",
+        h3("Zeiterfassung"),
+        button(
+          cls := "close-button",
+          "✕",
+          onClick --> { _ => isTimeTrackingSidebarVisible.set(false) }
+        )
+      ),
+      div(
+        cls := "sidebar-content",
+        div(
+          cls := "form-field",
+          span("Datum: "),
+          input(typ := "date") // Date input field
+        ),
+        div(
+          cls := "form-field",
+          span("Stunden: "),
+          input(
+            typ := "number", 
+            minAttr := "0", 
+            stepAttr := "0.5", 
+            onInput.mapToValue --> { value =>
+              timeInFormVar.set(value.toDouble) // Store the entered time locally
+            }
+          ) // Hours input field
+        ),
+        button(
+          cls := "submit-button",
+          "Speichern",
+          onClick --> { _ =>
+            val addedTime = timeInFormVar.now()
+            // Update the project list reactively
+            KanbanBoardPageView.projectList.update { list =>
+              list.map { p =>
+                if (p.name == project.name) {
+                  val updatedProject = p.copy(timeTracked = p.timeTracked + addedTime)
+                  
+                  // Update the selected project if it matches
+                  if (KanbanBoardPageView.selectedProjectVar.now().contains(p)) {
+                    KanbanBoardPageView.selectedProjectVar.set(Some(updatedProject))
+                  }
+                  updatedProject // Return the updated project
+                } else p
+              }
+            }
+
+            // Close the sidebar
+            isTimeTrackingSidebarVisible.set(false)
+          }
+        )
+      )
+    )
   }
 }
 

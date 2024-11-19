@@ -146,5 +146,57 @@ body {
   align-items: center;
 }
 
+.project-details {
+  position: relative;
+}
+
+.time-tracking-sidebar {
+  position: fixed; /* Use fixed to center in the viewport */
+  top: 50%; /* Start centering */
+  left: 50%; /* Start centering */
+  transform: translate(-50%, -50%); /* Center fully */
+  width: 300px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Adjusted shadow for modal appearance */
+  padding: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px; /* Optional for a more modal-like look */
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.submit-button {
+  margin-top: 16px;
+  align-self: flex-end;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
 
 /**/
