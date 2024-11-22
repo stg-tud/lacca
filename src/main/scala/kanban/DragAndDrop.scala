@@ -1,12 +1,13 @@
 package kanban
 
+import com.raquo.laminar.api.L.Signal
+import kanban.models.{Project, ProjectId, ProjectStatus}
 import org.scalajs.dom.html.Div
-import scala.scalajs.js
-import com.raquo.laminar.api.L.Var
-import kanban.models.Project // Adjust the path if necessary
+
+import scala.scalajs.js // Adjust the path if necessary
 
 object DragAndDrop {
-  def setupDragAndDrop(updateProjectStatus: (String, String) => Unit, projectList: Var[List[Project]]): Unit = {
+  def setupDragAndDrop(updateProjectStatus: (ProjectId, ProjectStatus) => Unit, projectList: Signal[List[Project]]): Unit = {
     js.Dynamic.global.interact(".kanban-card").draggable(js.Dynamic.literal(
       inertia = true,
       autoScroll = true,
@@ -32,25 +33,21 @@ object DragAndDrop {
       ondrop = (event: js.Dynamic) => {
         val draggableElement = event.relatedTarget.asInstanceOf[Div]
         val dropzoneElement = event.target.asInstanceOf[Div]
-        dropzoneElement.appendChild(draggableElement)
+//        dropzoneElement.appendChild(draggableElement)
         // Get the id attribute of dropzoneElement and remove the "column-" prefix
         val idAttr = dropzoneElement.id.replace("column-", "")
         println(s"Dropzone Status: $idAttr")
-        val newStatus = idAttr
+        val newStatus = ProjectStatus.valueOf(idAttr)
         val projectName = draggableElement.getAttribute("data-name")
-        
+
         //right now it does not work so I comment it out
-        //updateProjectStatus(projectName, newStatus)
+        // println(s"setting $projectName to $newStatus")
+        updateProjectStatus(projectName, newStatus)
 
-        // Print the updated project list after the update
-        println("Project list after drag-and-drop:")
-        projectList.now().foreach { project =>
-          println(s"Project Name: ${project.name}, Status: ${project.status}, Revisor: ${project.revisor}, Deadline: ${project.deadline}")
-        }
-
-        draggableElement.setAttribute("data-x", "0")
-        draggableElement.setAttribute("data-y", "0")
-        draggableElement.style.transform = "translate(0, 0)"
+//        draggableElement.remove()
+//        draggableElement.setAttribute("data-x", "0")
+//        draggableElement.setAttribute("data-y", "0")
+//        draggableElement.style.transform = "translate(0, 0)"
       }
     ))
   }

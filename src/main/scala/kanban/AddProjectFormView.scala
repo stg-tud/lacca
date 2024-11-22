@@ -78,19 +78,17 @@ object AddProjectFormView {
           typ := "submit",
           idAttr := "submit-button",
           "Hinzufügen",
-          onClick --> { e =>
-            {
-              toggleDisplay.update(t => "none")
-              KanbanBoardPageView.addNewProject(
-                Project(
-                  projectName.now(),
-                  ProjectStatus.valueOf(projectStatus.now()),
-                  Revisors.valueOf(revisor.now()),
-                  deadline.now()
-                  )
-              )
-            }
-          }
+          onClick.map(_ =>
+            toggleDisplay.update(_ => "none")
+            ProjectCommands.add(
+            Project(
+              id = projectName.now(),
+              name = projectName.now(),
+              status = ProjectStatus.valueOf(projectStatus.now()),
+              revisor = Revisors.valueOf(revisor.now()),
+              deadline = deadline.now()
+            ))
+          ) --> projectCommandBus,
         ),
         button(
           idAttr := "cancel-button",

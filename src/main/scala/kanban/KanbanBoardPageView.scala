@@ -1,37 +1,44 @@
 package kanban
 
-import org.scalajs.dom
-import org.scalajs.dom.document
-import kanban.NavBar
+import com.raquo.airstream.ownership.ManualOwner
 import com.raquo.laminar.api.L.{*, given}
-import kanban.DragAndDrop.*
-import com.raquo.laminar.api.features.unitArrows
 import kanban.AddProjectFormView.*
-import kanban.Pages.*
+import kanban.DragAndDrop.*
 import kanban.models.*
+import org.scalajs.dom
+
 import scala.scalajs.js.Date
+
+enum ProjectCommands:
+  case add(project: Project)
+  case delete(id: ProjectId)
+  case modifyStatus(id: ProjectId, newStatus: ProjectStatus)
 
 object KanbanBoardPageView {
   val toggleDisplay: Var[String] = Var("none")
-  val projectList: Var[List[Project]] = Var(List[Project]())
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
   val revisors: List[String] = List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
   val selectedRevisorVar = Var("Bearbeiter")
   val selectedDeadlineVar = Var(Option.empty[Date])
 
+  val projectCommandBus: EventBus[ProjectCommands] = new EventBus[ProjectCommands]
+  val projectsSignal: Signal[List[Project]] = projectCommandBus.stream.scanLeft(List())((projectList, command) => command match
+    case ProjectCommands.add(project) => projectList :+ project
+    case ProjectCommands.delete(id) => projectList.filter(_.id != id)
+    case ProjectCommands.modifyStatus(id, newStatus) => projectList.map(project =>
+      if project.id == id then project.copy(status = newStatus) else project)).toObservable
+  given ManualOwner()
+  projectCommandBus.stream.addObserver(Observer(c => println(s"command: $c")))
+//  projectStream.addObserver(Observer(projects => println(s"projects: $projects")))
+
   def apply(): HtmlElement = {
     // Function to update project status
-    def updateProjectStatus(projectName: String, newStatus: String): Unit = {
-      projectList.update { projects =>
-        val updatedProjects = projects.map { project =>
-          if (project.name == projectName) project.copy(status = ProjectStatus.valueOf(newStatus))
-          else project
-        }
-      updatedProjects
+    def updateProjectStatus(projectId: ProjectId, newStatus: ProjectStatus): Unit = {
+        projectCommandBus.emit(ProjectCommands.modifyStatus(projectId, newStatus))
     }
-    }
-    setupDragAndDrop(updateProjectStatus, projectList)
+
+    setupDragAndDrop(updateProjectStatus, projectsSignal)
     val kanbanElement = div(
       idAttr := "kanbanboard-container",
       NavBar(),
@@ -66,7 +73,7 @@ object KanbanBoardPageView {
             div(
               cls := "kanban-column-content",
               idAttr := s"column-${columnTitle}",
-              children <-- projectList.signal.combineWith(selectedRevisorVar.signal, selectedDeadlineVar.signal).map {
+              children <-- projectsSignal.signal.combineWith(selectedRevisorVar.signal, selectedDeadlineVar.signal).map {
                 (list: List[Project], selectedRevisor: String, selectedDeadline: Option[Date]) =>
                   list
                     .filter(p => p.status.toString == columnTitle) // Filter by status (column)
@@ -79,8 +86,7 @@ object KanbanBoardPageView {
                           true // No deadline filter selected, show all projects
                           }
                         }
-                    .map(p => renderProjectCard(p.name, p.status, p.revisor, p.deadline)) // Render project cards
-              }
+              }.split(_.id)(renderProjectCard)
             )
           )
         }
@@ -104,27 +110,29 @@ object KanbanBoardPageView {
   }
 
   def addNewProject(project: Project): Unit = {
-    projectList.update(list => list :+ project)
+    projectCommandBus.emit(ProjectCommands.add(project))
   }
 
-  def removeProject(projectName: String): Unit = {
-    projectList.update(list => list.filter(_.name != projectName))
+  def removeProject(projectId: ProjectId): Unit = {
+    projectCommandBus.emit(ProjectCommands.delete(projectId))
   }
 
-  def renderProjectCard(projectName: String, status: ProjectStatus, revisorName: Revisors, deadline: Option[Date]): HtmlElement = {
+  def renderProjectCard(projectId: String, initialProject: Project, projectSignal: Signal[Project]): HtmlElement = {
     div(
       className := "kanban-card",
-      projectName,
+      text <-- projectSignal.map(_.name),
       button(
         className := "delete-project-button",
         "Löschen",
-        onClick --> (_ => removeProject(projectName))
+        onClick --> (_ => removeProject(projectId))
       ),
       br(),
-      formatDate(deadline),
+      text <-- projectSignal.map(p => formatDate(p.deadline)),
       br(),
-      revisorName.toString,
-      dataAttr("name") := projectName
+      text <-- projectSignal.map(_.revisor.toString),
+      dataAttr("name") <-- projectSignal.map(_.name),
+      dataAttr("x") := "0",
+      dataAttr("y") := "0"
     )
   }
 
