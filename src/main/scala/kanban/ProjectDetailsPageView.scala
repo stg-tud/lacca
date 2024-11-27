@@ -1,7 +1,9 @@
 package kanban
 
-import com.raquo.laminar.api.L._
+import com.raquo.laminar.api.L.*
+import kanban.KanbanBoardPageView.projectCommandBus
 import kanban.models.*
+
 import scala.scalajs.js.Date
 
 object ProjectDetailsPageView {
@@ -88,23 +90,18 @@ object ProjectDetailsPageView {
       button(
         cls := "save-button",
         "Speichern",
-        onClick --> { _ =>
-          // Update the project in the main list with new values
-          KanbanBoardPageView.projectList.update { list =>
-            list.map { p =>
-              if (p.name == project.name) {
-                p.copy(
-                  revisor = Revisors.valueOf(editedRevisorVar.now()),
-                  status = ProjectStatus.valueOf(editedStatusVar.now()),
-                  deadline = editedDeadlineVar.now()
-                )
-              } else p
-            }
-          }
+        onClick.map(_ =>
+          val updatedProject = project.copy(
+            revisor = Revisors.valueOf(editedRevisorVar.now()),
+            status = ProjectStatus.valueOf(editedStatusVar.now()),
+            deadline = editedDeadlineVar.now()
+          )
           // Go back to Kanban view after saving
           KanbanBoardPageView.showKanbanBoard.set(true)
           KanbanBoardPageView.selectedProjectVar.set(None) // Clear selected project
-        }
+
+          ProjectCommands.update(project.id, updatedProject)
+        ) --> projectCommandBus,
       ),
       
       // Back button to return to Kanban board
@@ -162,26 +159,16 @@ object ProjectDetailsPageView {
         button(
           cls := "submit-button",
           "Speichern",
-          onClick --> { _ =>
+          onClick.map ( _ =>
             val addedTime = timeInFormVar.now()
             // Update the project list reactively
-            KanbanBoardPageView.projectList.update { list =>
-              list.map { p =>
-                if (p.name == project.name) {
-                  val updatedProject = p.copy(timeTracked = p.timeTracked + addedTime)
-                  
-                  // Update the selected project if it matches
-                  if (KanbanBoardPageView.selectedProjectVar.now().contains(p)) {
-                    KanbanBoardPageView.selectedProjectVar.set(Some(updatedProject))
-                  }
-                  updatedProject // Return the updated project
-                } else p
-              }
-            }
+            val updatedProject = project.copy(timeTracked = project.timeTracked + addedTime)
 
             // Close the sidebar
             isTimeTrackingSidebarVisible.set(false)
-          }
+
+            ProjectCommands.update(project.id, updatedProject)
+          ) --> projectCommandBus
         )
       )
     )
