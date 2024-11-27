@@ -73,7 +73,7 @@ object KanbanBoardPageView {
             div(
               cls := "kanban-column-content",
               idAttr := s"column-${columnTitle}",
-              children <-- projectsSignal.signal.combineWith(selectedRevisorVar.signal, selectedDeadlineVar.signal).map {
+              children <-- projectsSignal.combineWith(selectedRevisorVar.signal, selectedDeadlineVar.signal).map {
                 (list: List[Project], selectedRevisor: String, selectedDeadline: Option[Date]) =>
                   list
                     .filter(p => p.status.toString == columnTitle) // Filter by status (column)
