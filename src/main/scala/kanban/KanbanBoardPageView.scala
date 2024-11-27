@@ -19,27 +19,37 @@ object KanbanBoardPageView {
   val toggleDisplay: Var[String] = Var("none")
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
-  val revisors: List[String] = List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+  val revisors: List[String] =
+    List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
   val selectedRevisorVar = Var("Bearbeiter")
   val selectedDeadlineVar = Var(Option.empty[Date])
-  val showKanbanBoard: Var[Boolean] = Var(true) // Initially, the Kanban board is shown
+  val showKanbanBoard: Var[Boolean] = Var(
+    true
+  ) // Initially, the Kanban board is shown
   val selectedProjectVar: Var[Option[ProjectId]] = Var(Option.empty[ProjectId])
 
-  val projectCommandBus: EventBus[ProjectCommands] = new EventBus[ProjectCommands]
-  val projectsMap: Signal[Map[ProjectId, Project]] = projectCommandBus.stream.scanLeft(Map.empty[ProjectId, Project])((projectMap, command) => command match
-    case ProjectCommands.add(project) => projectMap + (project.id -> project)
-    case ProjectCommands.delete(id) => projectMap.removed(id)
-    case ProjectCommands.update(id, newProject) => projectMap.updated(id, newProject)
-    case ProjectCommands.modifyStatus(id, newStatus) =>
-      projectMap.updatedWith(id)(old => old.map(_.copy(status=newStatus))))
+  val projectCommandBus: EventBus[ProjectCommands] =
+    new EventBus[ProjectCommands]
+  val projectsMap: Signal[Map[ProjectId, Project]] = projectCommandBus.stream
+    .scanLeft(Map.empty[ProjectId, Project])((projectMap, command) =>
+      command match
+        case ProjectCommands.add(project) =>
+          projectMap + (project.id -> project)
+        case ProjectCommands.delete(id) => projectMap.removed(id)
+        case ProjectCommands.update(id, newProject) =>
+          projectMap.updated(id, newProject)
+        case ProjectCommands.modifyStatus(id, newStatus) =>
+          projectMap.updatedWith(id)(old => old.map(_.copy(status = newStatus)))
+    )
   val projectsSignal: Signal[List[Project]] = projectsMap.map(_.values.toList)
   given ManualOwner()
   projectCommandBus.stream.addObserver(Observer(c => println(s"command: $c")))
 
-  val selectedProject: Signal[Option[Project]] = projectsMap.combineWith(selectedProjectVar).map {
-    case (projects, Some(id)) => projects.get(id)
-    case _ => None
-  }
+  val selectedProject: Signal[Option[Project]] =
+    projectsMap.combineWith(selectedProjectVar).map {
+      case (projects, Some(id)) => projects.get(id)
+      case _                    => None
+    }
 
   def apply(): HtmlElement = {
     setupDragAndDrop(updateProjectStatus)
@@ -53,7 +63,10 @@ object KanbanBoardPageView {
   }
 
   // Function to update project status
-  def updateProjectStatus(projectId: ProjectId, newStatus: ProjectStatus): Unit = {
+  def updateProjectStatus(
+      projectId: ProjectId,
+      newStatus: ProjectStatus
+  ): Unit = {
     projectCommandBus.emit(ProjectCommands.modifyStatus(projectId, newStatus))
   }
 
@@ -68,10 +81,10 @@ object KanbanBoardPageView {
   // Function to format the Date as "YYYY-MM-DD"
   def formatDate(date: Option[Date]): String = {
     if (date.nonEmpty) {
-            val convertedDate: Date = date.getOrElse(new Date())
-            convertedDate.toLocaleDateString() // Formats as "YYYY-MM-DD"
+      val convertedDate: Date = date.getOrElse(new Date())
+      convertedDate.toLocaleDateString() // Formats as "YYYY-MM-DD"
     } else {
-            ""
+      ""
     }
   }
 
@@ -83,7 +96,9 @@ object KanbanBoardPageView {
         typ := "date", // Input field for date selection
         onInput.mapToValue --> { dateStr =>
           if (dateStr.nonEmpty) {
-            selectedDeadlineVar.set(Some(new Date(dateStr))) // Set the selected deadline as a Date
+            selectedDeadlineVar.set(
+              Some(new Date(dateStr))
+            ) // Set the selected deadline as a Date
           } else {
             selectedDeadlineVar.set(None) // No date selected
           }
@@ -93,9 +108,11 @@ object KanbanBoardPageView {
       select(
         idAttr := "revisor",
         // Populate the dropdown options based on the `revisors` list
-        revisors.map(revisor => 
-          if (revisor == "Bearbeiter") option(value := revisor, revisor, selected := true)
-          else option(value := revisor, revisor)),
+        revisors.map(revisor =>
+          if (revisor == "Bearbeiter")
+            option(value := revisor, revisor, selected := true)
+          else option(value := revisor, revisor)
+        ),
         onChange.mapToValue --> { value =>
           selectedRevisorVar.set(value) // Update the selected revisor variable
         }
@@ -109,20 +126,36 @@ object KanbanBoardPageView {
             div(
               cls := "kanban-column-content",
               idAttr := s"column-${columnTitle}",
-              children <-- projectsSignal.combineWith(selectedRevisorVar.signal, selectedDeadlineVar.signal).map {
-                (list: List[Project], selectedRevisor: String, selectedDeadline: Option[Date]) =>
-                  list
-                    .filter(p => p.status.toString == columnTitle) // Filter by status (column)
-                    .filter(p => selectedRevisor == "Bearbeiter" || p.revisor.toString == selectedRevisor) // Filter by revisor
-                    .filter { p =>
-                      selectedDeadline match {
-                        case Some(selectedDate) =>
-                          p.deadline.exists(_.getTime() == selectedDate.getTime()) // Only projects with a matching deadline appear
-                        case None =>
-                          true // No deadline filter selected, show all projects
-                          }
+              children <-- projectsSignal
+                .combineWith(
+                  selectedRevisorVar.signal,
+                  selectedDeadlineVar.signal
+                )
+                .map {
+                  (
+                      list: List[Project],
+                      selectedRevisor: String,
+                      selectedDeadline: Option[Date]
+                  ) =>
+                    list
+                      .filter(p =>
+                        p.status.toString == columnTitle
+                      ) // Filter by status (column)
+                      .filter(p =>
+                        selectedRevisor == "Bearbeiter" || p.revisor.toString == selectedRevisor
+                      ) // Filter by revisor
+                      .filter { p =>
+                        selectedDeadline match {
+                          case Some(selectedDate) =>
+                            p.deadline.exists(
+                              _.getTime() == selectedDate.getTime()
+                            ) // Only projects with a matching deadline appear
+                          case None =>
+                            true // No deadline filter selected, show all projects
                         }
-              }.split(_.id)(renderProjectCard)
+                      }
+                }
+                .split(_.id)(renderProjectCard)
             )
           )
         }
@@ -145,8 +178,11 @@ object KanbanBoardPageView {
     kanbanElement
   }
 
-
-  def renderProjectCard(projectId: String, initialProject: Project, projectSignal: Signal[Project]): HtmlElement = {
+  def renderProjectCard(
+      projectId: String,
+      initialProject: Project,
+      projectSignal: Signal[Project]
+  ): HtmlElement = {
     div(
       className := "kanban-card",
       text <-- projectSignal.map(_.name),
@@ -174,9 +210,11 @@ object KanbanBoardPageView {
     div(
       child <-- selectedProject.map {
         case Some(project) => ProjectDetailsPageView(project)
-        case None => div("No project selected") // Message or empty div if no project is selected
+        case None =>
+          div(
+            "No project selected"
+          ) // Message or empty div if no project is selected
       }
     )
   }
 }
-

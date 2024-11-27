@@ -7,7 +7,8 @@ import kanban.models.*
 import scala.scalajs.js.Date
 
 object ProjectDetailsPageView {
-  val revisors: List[String] = List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+  val revisors: List[String] =
+    List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
 
   // Function to render the project details page
@@ -22,38 +23,48 @@ object ProjectDetailsPageView {
     div(
       cls := "project-details",
       h2(project.name),
-      
+
       // Editable status dropdown
       div(
         cls := "project-detail",
         span(cls := "project-detail-label", "Status: "),
         select(
           statusValues.map(status =>
-            option(value := status, status, selected := (status == project.status.toString))
+            option(
+              value := status,
+              status,
+              selected := (status == project.status.toString)
+            )
           ),
           onChange.mapToValue --> editedStatusVar.set
         )
       ),
-      
+
       // Editable revisor dropdown
       div(
         cls := "project-detail",
         span(cls := "project-detail-label", "Bearbeiter: "),
         select(
           revisors.map(revisor =>
-            option(value := revisor, revisor, selected := (revisor == project.revisor.toString))
+            option(
+              value := revisor,
+              revisor,
+              selected := (revisor == project.revisor.toString)
+            )
           ),
           onChange.mapToValue --> editedRevisorVar.set
         )
       ),
-      
+
       // Editable deadline input (date picker)
       div(
         cls := "project-detail",
         span(cls := "project-detail-label", "Fälligkeitsdatum: "),
         input(
           typ := "date",
-          value := project.deadline.map(_.toISOString().slice(0, 10)).getOrElse(""), // Format date as "YYYY-MM-DD"
+          value := project.deadline
+            .map(_.toISOString().slice(0, 10))
+            .getOrElse(""), // Format date as "YYYY-MM-DD"
           onInput.mapToValue --> { dateStr =>
             if (dateStr.nonEmpty) {
               editedDeadlineVar.set(Some(new Date(dateStr)))
@@ -69,7 +80,9 @@ object ProjectDetailsPageView {
         cls := "project-detail",
         span(cls := "project-detail-label", "Total Time Tracked: "),
         span(
-          child.text <-- Var(project.timeTracked).signal.map(time => f"$time%.2f hours")
+          child.text <-- Var(project.timeTracked).signal.map(time =>
+            f"$time%.2f hours"
+          )
         )
       ),
 
@@ -82,7 +95,14 @@ object ProjectDetailsPageView {
 
       // Conditionally render the sidebar
       child.maybe <-- isTimeTrackingSidebarVisible.signal.map {
-        case true => Some(renderTimeTrackingSidebar(timeInFormVar, isTimeTrackingSidebarVisible, project))
+        case true =>
+          Some(
+            renderTimeTrackingSidebar(
+              timeInFormVar,
+              isTimeTrackingSidebarVisible,
+              project
+            )
+          )
         case false => None
       },
 
@@ -98,12 +118,14 @@ object ProjectDetailsPageView {
           )
           // Go back to Kanban view after saving
           KanbanBoardPageView.showKanbanBoard.set(true)
-          KanbanBoardPageView.selectedProjectVar.set(None) // Clear selected project
+          KanbanBoardPageView.selectedProjectVar.set(
+            None
+          ) // Clear selected project
 
           ProjectCommands.update(project.id, updatedProject)
-        ) --> projectCommandBus,
+        ) --> projectCommandBus
       ),
-      
+
       // Back button to return to Kanban board
       button(
         cls := "back-button",
@@ -111,7 +133,9 @@ object ProjectDetailsPageView {
         onClick --> { _ =>
           // Set the view back to Kanban board
           KanbanBoardPageView.showKanbanBoard.set(true)
-          KanbanBoardPageView.selectedProjectVar.set(None) // Clear selected project
+          KanbanBoardPageView.selectedProjectVar.set(
+            None
+          ) // Clear selected project
         }
       )
     )
@@ -124,8 +148,10 @@ object ProjectDetailsPageView {
 
   // Function to render the time tracking form
   private def renderTimeTrackingSidebar(
-    timeInFormVar: Var[Double], isTimeTrackingSidebarVisible: Var[Boolean], project: Project
-    ): HtmlElement = {
+      timeInFormVar: Var[Double],
+      isTimeTrackingSidebarVisible: Var[Boolean],
+      project: Project
+  ): HtmlElement = {
     div(
       cls := "time-tracking-sidebar",
       div(
@@ -148,21 +174,24 @@ object ProjectDetailsPageView {
           cls := "form-field",
           span("Stunden: "),
           input(
-            typ := "number", 
-            minAttr := "0", 
-            stepAttr := "0.5", 
+            typ := "number",
+            minAttr := "0",
+            stepAttr := "0.5",
             onInput.mapToValue --> { value =>
-              timeInFormVar.set(value.toDouble) // Store the entered time locally
+              timeInFormVar.set(
+                value.toDouble
+              ) // Store the entered time locally
             }
           ) // Hours input field
         ),
         button(
           cls := "submit-button",
           "Speichern",
-          onClick.map ( _ =>
+          onClick.map(_ =>
             val addedTime = timeInFormVar.now()
             // Update the project list reactively
-            val updatedProject = project.copy(timeTracked = project.timeTracked + addedTime)
+            val updatedProject =
+              project.copy(timeTracked = project.timeTracked + addedTime)
 
             // Close the sidebar
             isTimeTrackingSidebarVisible.set(false)
@@ -174,4 +203,3 @@ object ProjectDetailsPageView {
     )
   }
 }
-

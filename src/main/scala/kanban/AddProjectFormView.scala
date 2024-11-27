@@ -11,7 +11,7 @@ object AddProjectFormView {
   val projectName = Var("")
   val deadline = Var(Option.empty[Date])
   val revisor = Var(Revisors.Manas.toString())
-  val revisorValues: List[String] = 
+  val revisorValues: List[String] =
     Revisors.values.map(_.toString).toList
   val projectStatus = Var(ProjectStatus.Neu.toString())
   val projectStatusValues: List[String] =
@@ -67,7 +67,9 @@ object AddProjectFormView {
             idAttr := "deadline",
             onInput.mapToValue --> { dateStr =>
               if (dateStr.nonEmpty) {
-                deadline.set(Some(new Date(dateStr))) // Set deadline as a Date object
+                deadline.set(
+                  Some(new Date(dateStr))
+                ) // Set deadline as a Date object
               } else {
                 deadline.set(None) // No deadline selected
               }
@@ -81,14 +83,15 @@ object AddProjectFormView {
           onClick.map(_ =>
             toggleDisplay.update(_ => "none")
             ProjectCommands.add(
-            Project(
-              id = projectName.now(),
-              name = projectName.now(),
-              status = ProjectStatus.valueOf(projectStatus.now()),
-              revisor = Revisors.valueOf(revisor.now()),
-              deadline = deadline.now()
-            ))
-          ) --> projectCommandBus,
+              Project(
+                id = projectName.now(),
+                name = projectName.now(),
+                status = ProjectStatus.valueOf(projectStatus.now()),
+                revisor = Revisors.valueOf(revisor.now()),
+                deadline = deadline.now()
+              )
+            )
+          ) --> projectCommandBus
         ),
         button(
           idAttr := "cancel-button",
