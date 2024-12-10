@@ -6,7 +6,11 @@ import kanban.AddProjectFormView.*
 import kanban.DragAndDrop.*
 import kanban.ProjectCommands.update
 import kanban.models.*
+import kanban.service.ProjectService.{createProject, getAllProjects}
+import kanban.service.UserService.getAllUsers
 
+import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
 
 enum ProjectCommands:
@@ -19,10 +23,24 @@ object KanbanBoardPageView {
   val toggleDisplay: Var[String] = Var("none")
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
-  val revisors: List[String] =
-    List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+
+  val revisorsListVar: Var[List[User]] = Var(List())
+  getAllUsers().onComplete {
+    case Success(users) =>
+      revisorsListVar.set(users.toList)
+    case Failure(exception) =>
+      println(s"Failed to retrieve users from the db! Exception: $exception")
+  }
   val selectedRevisorVar = Var("Bearbeiter")
   val selectedDeadlineVar = Var(Option.empty[Date])
+  val projectsListVar: Var[List[Project]] = Var(List())
+  getAllProjects().onComplete{
+    case Success(projects) =>
+      projectsListVar.set(projects.toList)
+    case Failure(exception) =>
+      println(s"Failed to retrieve projects from the db! Exception: $exception")
+  }
+
   val showKanbanBoard: Var[Boolean] = Var(
     true
   ) // Initially, the Kanban board is shown
@@ -34,6 +52,11 @@ object KanbanBoardPageView {
     .scanLeft(Map.empty[ProjectId, Project])((projectMap, command) =>
       command match
         case ProjectCommands.add(project) =>
+          println(s"projectcommands.add matched")
+          createProject(project).onComplete {
+            case Success(value) => println(s"project created!")
+            case Failure(exception) => println(s"project creation failed!")
+          }
           projectMap + (project.id -> project)
         case ProjectCommands.delete(id) => projectMap.removed(id)
         case ProjectCommands.update(id, newProject) =>
@@ -41,6 +64,8 @@ object KanbanBoardPageView {
         case ProjectCommands.modifyStatus(id, newStatus) =>
           projectMap.updatedWith(id)(old => old.map(_.copy(status = newStatus)))
     )
+  //val projectsSignal: Signal[List[Project]] = projectsListVar.signal
+  //TODO:remove this later
   val projectsSignal: Signal[List[Project]] = projectsMap.map(_.values.toList)
   given ManualOwner()
   projectCommandBus.stream.addObserver(Observer(c => println(s"command: $c")))
@@ -81,7 +106,9 @@ object KanbanBoardPageView {
   // Function to format the Date as "YYYY-MM-DD"
   def formatDate(date: Option[Date]): String = {
     if (date.nonEmpty) {
+      println(s"date is non-empty: ${date.toString}")
       val convertedDate: Date = date.getOrElse(new Date())
+      println(s"convertedDate is: ${convertedDate.toLocaleDateString()}")
       convertedDate.toLocaleDateString() // Formats as "YYYY-MM-DD"
     } else {
       ""
@@ -107,12 +134,19 @@ object KanbanBoardPageView {
       // Revisor filter
       select(
         idAttr := "revisor",
-        // Populate the dropdown options based on the `revisors` list
-        revisors.map(revisor =>
-          if (revisor == "Bearbeiter")
-            option(value := revisor, revisor, selected := true)
-          else option(value := revisor, revisor)
+        option(
+          value := "",
+          selected := true,
+          hidden := true,
+          disabled := true,
+          "Choose revisor"
         ),
+        children <-- revisorsListVar.signal.map { users =>
+          users.map {
+            user =>
+              option(value := user.name, user.name)
+          }
+        },
         onChange.mapToValue --> { value =>
           selectedRevisorVar.set(value) // Update the selected revisor variable
         }
@@ -142,7 +176,7 @@ object KanbanBoardPageView {
                         p.status.toString == columnTitle
                       ) // Filter by status (column)
                       .filter(p =>
-                        selectedRevisor == "Bearbeiter" || p.revisor.toString == selectedRevisor
+                        selectedRevisor == "Bearbeiter" || p.revisorId == selectedRevisor
                       ) // Filter by revisor
                       .filter { p =>
                         selectedDeadline match {
@@ -192,9 +226,11 @@ object KanbanBoardPageView {
         onClick --> (_ => removeProject(projectId))
       ),
       br(),
-      text <-- projectSignal.map(p => formatDate(p.deadline)),
+      text <-- projectSignal.map(p => {
+        formatDate(p.deadline)
+      }),
       br(),
-      text <-- projectSignal.map(_.revisor.toString),
+      text <-- projectSignal.map(_.revisorId),
       dataAttr("name") <-- projectSignal.map(_.name),
       dataAttr("x") := "0",
       dataAttr("y") := "0",

@@ -1,20 +1,30 @@
 package kanban
 
 import com.raquo.laminar.api.L.*
-import kanban.KanbanBoardPageView.projectCommandBus
+import kanban.KanbanBoardPageView.{projectCommandBus}
 import kanban.models.*
+import kanban.service.UserService.getAllUsers
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
+import scala.util.{Failure, Success}
 
 object ProjectDetailsPageView {
-  val revisors: List[String] =
-    List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+//  val revisors: List[String] =
+//    List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+  val revisorsListVar: Var[List[User]] = Var(List())
+  getAllUsers().onComplete {
+    case Success(users) =>
+      revisorsListVar.set(users.toList)
+    case Failure(exception) =>
+      println(s"Failed to retrieve users from the db! Exception: $exception")
+  }
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
 
   // Function to render the project details page
   def apply(project: Project): HtmlElement = {
     // Temporary variables to hold the edited values
-    val editedRevisorVar = Var(project.revisor.toString)
+    val editedRevisorIdVar = Var(project.revisorId)
     val editedStatusVar = Var(project.status.toString)
     val editedDeadlineVar = Var(project.deadline)
     val isTimeTrackingSidebarVisible = Var(false)
@@ -45,14 +55,24 @@ object ProjectDetailsPageView {
         cls := "project-detail",
         span(cls := "project-detail-label", "Bearbeiter: "),
         select(
-          revisors.map(revisor =>
-            option(
-              value := revisor,
-              revisor,
-              selected := (revisor == project.revisor.toString)
-            )
-          ),
-          onChange.mapToValue --> editedRevisorVar.set
+          children <-- revisorsListVar.signal.map { users =>
+            users.map {
+              user =>
+                option(
+                  value := user.name,
+                  user.name,
+                  selected := (user.id == project.revisorId)
+                )
+            }
+          },
+//          revisors.map(revisor =>
+//            option(
+//              value := revisor,
+//              revisor,
+//              selected := (revisor == project.revisor.toString)
+//            )
+//          ),
+          onChange.mapToValue --> editedRevisorIdVar.set
         )
       ),
 
@@ -112,7 +132,7 @@ object ProjectDetailsPageView {
         "Speichern",
         onClick.map(_ =>
           val updatedProject = project.copy(
-            revisor = Revisors.valueOf(editedRevisorVar.now()),
+            revisorId = editedRevisorIdVar.now(),
             status = ProjectStatus.valueOf(editedStatusVar.now()),
             deadline = editedDeadlineVar.now()
           )
