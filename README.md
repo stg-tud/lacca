@@ -8,8 +8,8 @@ lacca
 Install lacca with npm
 
 ```bash
-  npm install
   cd lacca
+  npm install
 ```
 
 Create a terminal window
