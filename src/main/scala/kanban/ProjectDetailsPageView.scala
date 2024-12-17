@@ -25,6 +25,7 @@ object ProjectDetailsPageView {
 
     div(
       cls := "project-details",
+      NavBar(),
       child <-- projectDetailsPageSignal.combineWith(KanbanBoardPageView.projectsMap).map {
         case (ProjectDetailsPage(projectId), projectsMap) =>
           projectsMap.get(projectId) match {
