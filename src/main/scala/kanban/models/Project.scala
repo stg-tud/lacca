@@ -2,8 +2,9 @@ package kanban.models
 
 import scala.scalajs.js
 import scala.scalajs.js.Date
+import scala.scalajs.js.JSConverters.JSRichOption
 
-type ProjectId = String
+type ProjectId = Option[Int]
 
 enum ProjectStatus:
   case Neu, Geplant, InArbeit, Abrechenbar, Abgeschlossen
@@ -20,11 +21,11 @@ case class Project(
   def toJsObject: ProjectJsObject = {
     js.Dynamic
       .literal(
-        id = this.id,
+        id = this.id.orUndefined,
         name = this.name,
         status = this.status.toString,
-        revisorId = this.revisorId,
-        deadline = this.deadline.toString,
+        revisorId = this.revisorId.orUndefined,
+        deadline = this.deadline.orUndefined,
         timeTracked = this.timeTracked
       )
       .asInstanceOf[ProjectJsObject]
@@ -32,10 +33,10 @@ case class Project(
 }
 
 trait ProjectJsObject extends js.Object {
-  val id: String
+  val id: js.UndefOr[Int]
   val name: String
   val status: String
-  val revisorId: String
-  val deadline: js.Date
+  val revisorId: js.UndefOr[Int]
+  val deadline: js.UndefOr[Date]
   val timeTracked: Double
 }

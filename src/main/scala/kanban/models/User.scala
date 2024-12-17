@@ -1,8 +1,10 @@
 package kanban.models
 
 import scala.scalajs.js
+import scala.scalajs.js.JSConverters.JSRichOption
+import scala.scalajs.js.UndefOr
 
-type UserId = String
+type UserId = Option[Int]
 
 case class User(
     id: UserId,
@@ -13,7 +15,7 @@ case class User(
   def toJsObject: UserJsObject = {
     js.Dynamic
       .literal(
-        id = this.id,
+        id = this.id.orUndefined,
         name = this.name,
         age = this.age,
         email = this.email
@@ -23,7 +25,7 @@ case class User(
 }
 
 trait UserJsObject extends js.Object {
-  val id: String
+  val id: UndefOr[Int]
   val name: String
   val age: Int
   val email: String

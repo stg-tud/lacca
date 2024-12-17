@@ -26,7 +26,7 @@ object SignupPageView {
         onSubmit.preventDefault.mapTo(()) --> { _ =>
           createUser(
             User(
-              id = nameVar.now(),
+              id = None,
               name = nameVar.now(),
               age = ageVar.now(),
               email = emailVar.now()

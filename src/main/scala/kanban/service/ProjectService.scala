@@ -1,13 +1,14 @@
 package kanban.service
 
 import kanban.dexie.DexieDB.dexieDB
-import kanban.models.{Project, ProjectJsObject, ProjectStatus}
+import kanban.models.{Project, ProjectJsObject, ProjectStatus, UserId}
 import org.scalablytyped.runtime.StringDictionary
 import typings.dexie.mod.{Dexie, Table}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.scalajs.js
+import scala.scalajs.js.Date
 
 object ProjectService {
   private val projectsTable: Table[ProjectJsObject, String, ProjectJsObject] = dexieDB.table("projects")
@@ -17,15 +18,16 @@ object ProjectService {
     projectsTable.add(project.toJsObject).toFuture
   }
 
+
   def getAllProjects(): Future[Seq[Project]] = {
     projectsTable.toArray().toFuture.map { projectsJsArray =>
       projectsJsArray.map { projectJsObject =>
         Project(
-          id = projectJsObject.id,
+          id = projectJsObject.id.toOption,
           name = projectJsObject.name,
           status = ProjectStatus.valueOf(projectJsObject.status),
-          revisorId = projectJsObject.revisorId,
-          deadline = Option(projectJsObject.deadline)
+          revisorId = projectJsObject.revisorId.toOption,
+          deadline = projectJsObject.deadline.toOption
         )
       }.toSeq
     }

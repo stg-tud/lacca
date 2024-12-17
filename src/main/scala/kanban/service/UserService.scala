@@ -22,7 +22,7 @@ object UserService {
     usersTable.toArray().toFuture.map { usersJsArray =>
       usersJsArray.map { userJsObject =>
         User(
-          id = userJsObject.id,
+          id = userJsObject.id.toOption,
           name = userJsObject.name,
           age = userJsObject.age,
           email = userJsObject.email

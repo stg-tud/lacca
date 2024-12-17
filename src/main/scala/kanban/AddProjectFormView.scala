@@ -14,7 +14,7 @@ object AddProjectFormView {
 
   val projectName = Var("")
   val projectDeadline = Var(Option.empty[Date])
-  val projectRevisorId = Var("")
+  val projectRevisorId = Var(Option.empty[Int])
   val projectStatus = Var(ProjectStatus.Neu.toString())
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
@@ -22,7 +22,6 @@ object AddProjectFormView {
   val revisorsListVar: Var[List[User]] = Var(List())
   getAllUsers().onComplete {
     case Success(users) =>
-      println(s"getAllUsers called from AddProjectFormView")
       users.map(u => println(s"user retrieved from db: ${u.name}, ${u.id}"))
       revisorsListVar.set(users.toList)
     case Failure(exception) =>
@@ -72,20 +71,20 @@ object AddProjectFormView {
               users.map {
                 user =>
                   option(
-                    value := user.id,
+                    value := user.id.getOrElse(0).toString,
                     user.name
                   )
               }
             },
-            onChange.mapToValue --> projectRevisorId
-//            value <-- revisor.signal.map(_.toString),
-//            onChange.mapToValue --> revisor,
-//            revisorValues.map(revisorName =>
-//              option(
-//                value := revisorName,
-//                revisorName
-//              )
-//            )
+            onChange.mapToValue --> { userId =>
+              if (userId.nonEmpty) {
+                projectRevisorId.set(
+                  Some(userId.toInt)
+                ) // Set deadline as a Date object
+              } else {
+                println(s"userId is empty!!")
+              }
+            }
           )
         ),
         br(),
@@ -115,11 +114,13 @@ object AddProjectFormView {
             // CREATING A PROJECT OBJECT IN THE DB
             ProjectCommands.add(
               Project(
-                id = projectName.now(),
+                //id will be created by the db
+                id = None,
                 name = projectName.now(),
                 status = ProjectStatus.valueOf(projectStatus.now()),
                 revisorId = projectRevisorId.now(),
-                deadline = projectDeadline.now()
+                deadline = projectDeadline.now(),
+                timeTracked = 0
               )
             )
           ) --> projectCommandBus

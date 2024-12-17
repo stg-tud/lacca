@@ -59,7 +59,7 @@ object ProjectDetailsPageView {
             users.map {
               user =>
                 option(
-                  value := user.name,
+                  value := user.id.toString,
                   user.name,
                   selected := (user.id == project.revisorId)
                 )
@@ -72,7 +72,9 @@ object ProjectDetailsPageView {
 //              selected := (revisor == project.revisor.toString)
 //            )
 //          ),
-          onChange.mapToValue --> editedRevisorIdVar.set
+          onChange.mapToValue --> { value =>
+            editedRevisorIdVar.set(value.toIntOption)
+          }
         )
       ),
 
