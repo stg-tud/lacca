@@ -45,21 +45,17 @@ object DragAndDrop {
           ondrop = (event: js.Dynamic) => {
             val draggableElement = event.relatedTarget.asInstanceOf[Div]
             val dropzoneElement = event.target.asInstanceOf[Div]
-//        dropzoneElement.appendChild(draggableElement)
-            // Get the id attribute of dropzoneElement and remove the "column-" prefix
             val idAttr = dropzoneElement.id.replace("column-", "")
             println(s"Dropzone Status: $idAttr")
             val newStatus = ProjectStatus.valueOf(idAttr)
             val projectName = draggableElement.getAttribute("data-name")
 
-            // right now it does not work so I comment it out
-            // println(s"setting $projectName to $newStatus")
             updateProjectStatus(projectName, newStatus)
 
-//        draggableElement.remove()
-//        draggableElement.setAttribute("data-x", "0")
-//        draggableElement.setAttribute("data-y", "0")
-//        draggableElement.style.transform = "translate(0, 0)"
+            draggableElement.remove()
+            draggableElement.setAttribute("data-x", "0")
+            draggableElement.setAttribute("data-y", "0")
+            draggableElement.style.transform = "translate(0, 0)"
           }
         )
       )
