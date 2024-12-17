@@ -9,4 +9,5 @@ val views = SplitRender(Router.currentPageSignal)
   .collectStatic(LoginPage)(LoginPageView())
   .collectStatic(SignupPage)(SignupPageView())
   .collectStatic(KanbanBoardPage)(KanbanBoardPageView())
+  .collectSignal[ProjectDetailsPage](ProjectDetailsPageView(_))
   .signal

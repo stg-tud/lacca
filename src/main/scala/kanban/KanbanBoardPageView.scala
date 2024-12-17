@@ -6,6 +6,7 @@ import kanban.AddProjectFormView.*
 import kanban.DragAndDrop.*
 import kanban.ProjectCommands.update
 import kanban.models.*
+import kanban.Pages.*
 
 import scala.scalajs.js.Date
 
@@ -56,8 +57,7 @@ object KanbanBoardPageView {
     div(
       NavBar(),
       child <-- showKanbanBoard.signal.map { showKanban =>
-        if (showKanban) renderKanbanBoard()
-        else renderProjectDetails()
+        renderKanbanBoard()
       }
     )
   }
@@ -201,19 +201,7 @@ object KanbanBoardPageView {
       onClick --> { _ =>
         // Handle the click and set the selected project for details view
         selectedProjectVar.set(Some(projectId))
-        showKanbanBoard.set(false) // Hide Kanban board and show project details
-      }
-    )
-  }
-
-  def renderProjectDetails(): HtmlElement = {
-    div(
-      child <-- selectedProject.map {
-        case Some(project) => ProjectDetailsPageView(project)
-        case None =>
-          div(
-            "No project selected"
-          ) // Message or empty div if no project is selected
+        Router.pushState(ProjectDetailsPage(projectId))
       }
     )
   }

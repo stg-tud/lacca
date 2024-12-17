@@ -9,5 +9,10 @@ val routes = List(
   Route.static(KanbanBoardPage, root / endOfSegments),
   Route.static(LoginPage, root / "login" / endOfSegments),
   Route.static(SignupPage, root / "signup" / endOfSegments),
-  Route.static(KanbanBoardPage, root / "kanbanboard" / endOfSegments)
+  Route.static(KanbanBoardPage, root / "kanbanboard" / endOfSegments),
+  Route[ProjectDetailsPage, String](
+    encode = projectDetailsPage => projectDetailsPage.id,
+    decode = arg => ProjectDetailsPage(id = arg),
+    pattern = root / "projectDetails" / segment[String] / endOfSegments
+  )
 )
