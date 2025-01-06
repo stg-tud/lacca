@@ -1,38 +1,49 @@
 package kanban
 
 import com.raquo.laminar.api.L.*
-import kanban.KanbanBoardPageView.projectCommandBus
+import kanban.KanbanBoardPageView.{projectCommandBus}
 import kanban.models.*
+import kanban.service.UserService.getAllUsers
 import kanban.Router.*
 import kanban.Pages.*
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
+import scala.util.{Failure, Success}
 import scala.scalajs.js
 
 object ProjectDetailsPageView {
-  val revisors: List[String] =
-    List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
+  val revisorsListVar: Var[List[User]] = Var(List())
+  getAllUsers().onComplete {
+    case Success(users) =>
+      revisorsListVar.set(users.toList)
+    case Failure(exception) =>
+      println(s"Failed to retrieve users from the db! Exception: $exception")
+  }
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
 
   // Function to render the project details page
-  def apply(projectDetailsPageSignal: Signal[ProjectDetailsPage]): HtmlElement = {
+  def apply(
+      projectDetailsPageSignal: Signal[ProjectDetailsPage]
+  ): HtmlElement = {
     // Temporary variables to hold the edited values
     val isTimeTrackingSidebarVisible = Var(false)
     val timeInFormVar = Var(0.0)
     val editedStatusVar = Var("")
-    val editedRevisorVar = Var("")
+    val editedRevisorVar: Var[UserId] = Var(None)
     val editedDeadlineVar = Var[Option[Date]](None)
 
     div(
       cls := "project-details",
       NavBar(),
-      child <-- projectDetailsPageSignal.combineWith(KanbanBoardPageView.projectsMap).map {
-        case (ProjectDetailsPage(projectId), projectsMap) =>
+      child <-- projectDetailsPageSignal
+        .combineWith(KanbanBoardPageView.projectsMap)
+        .map { case (ProjectDetailsPage(projectId), projectsMap) =>
           projectsMap.get(projectId) match {
             case Some(project) =>
               // Initialize editing variables with current project values
               editedStatusVar.set(project.status.toString)
-              editedRevisorVar.set(project.revisor.toString)
+              editedRevisorVar.set(project.revisorId)
               editedDeadlineVar.set(project.deadline)
 
               div(
@@ -50,26 +61,28 @@ object ProjectDetailsPageView {
                         selected := (status == project.status.toString)
                       )
                     ),
-                  onChange.mapToValue --> editedStatusVar.set
+                    onChange.mapToValue --> editedStatusVar.set
                   )
                 ),
-
                 // Editable revisor dropdown
                 div(
                   cls := "project-detail",
                   span(cls := "project-detail-label", "Bearbeiter: "),
                   select(
-                    revisors.map(revisor =>
-                      option(
-                        value := revisor,
-                        revisor,
-                        selected := (revisor == project.revisor.toString)
-                      )
-                    ),
-                  onChange.mapToValue --> editedRevisorVar.set
+                    children <-- revisorsListVar.signal.map { revisors =>
+                      revisors.map { revisor =>
+                        option(
+                          value := revisor.id.toString,
+                          revisor.name,
+                          selected := (revisor.id == project.revisorId)
+                        )
+                      }
+                    },
+                    onChange.mapToValue --> { value =>
+                      editedRevisorVar.set(value.toIntOption)
+                    }
                   )
                 ),
-
                 // Editable deadline input (date picker)
                 div(
                   cls := "project-detail",
@@ -92,13 +105,15 @@ object ProjectDetailsPageView {
                 // Function to display the total time tracked in "hour:minute" format
                 div(
                   cls := "project-detail",
-                  span(cls := "project-detail-label", "Gesamte erfasste Zeit: "),
                   span(
-                    child.text <-- Var(project.timeTracked).signal.map(timeInMinutes =>
-                    formatTime(timeInMinutes)
-                    )
-                    )
+                    cls := "project-detail-label",
+                    "Gesamte erfasste Zeit: "
                   ),
+                  span(
+                    child.text <-- Var(project.timeTracked).signal
+                      .map(timeInMinutes => formatTime(timeInMinutes))
+                  )
+                ),
 
                 // Button to open the time tracking sidebar
                 button(
@@ -119,23 +134,21 @@ object ProjectDetailsPageView {
                     )
                   case false => None
                 },
-
+                // Save button to apply changes
                 button(
                   cls := "save-button",
                   "Speichern",
                   onClick.map(_ =>
                     val updatedProject = project.copy(
+                      revisorId = editedRevisorVar.now(),
                       status = ProjectStatus.valueOf(editedStatusVar.now()),
-                      revisor = Revisors.valueOf(editedRevisorVar.now()),
                       deadline = editedDeadlineVar.now()
                     )
                     // Go back to Kanban view after saving
                     Router.pushState(KanbanBoardPage)
-
                     ProjectCommands.update(project.id, updatedProject)
                   ) --> projectCommandBus
                 ),
-
                 button(
                   "Zurück",
                   onClick --> { _ => Router.pushState(KanbanBoardPage) }
@@ -144,7 +157,7 @@ object ProjectDetailsPageView {
             case None =>
               div("Projekt nicht gefunden.")
           }
-      }
+        }
     )
   }
 
@@ -167,8 +180,10 @@ object ProjectDetailsPageView {
 
       // Lexicographically compare time strings
       val isValidTime = for {
-        startTime <- Option(startTimeVar.now()).filter(_.matches("^(?:[01]\\d|2[0-3]):[0-5]\\d$"))
-        endTime   <- Option(endTimeVar.now()).filter(_.matches("^(?:[01]\\d|2[0-3]):[0-5]\\d$"))
+        startTime <- Option(startTimeVar.now())
+          .filter(_.matches("^(?:[01]\\d|2[0-3]):[0-5]\\d$"))
+        endTime <- Option(endTimeVar.now())
+          .filter(_.matches("^(?:[01]\\d|2[0-3]):[0-5]\\d$"))
       } yield startTime < endTime // Lexicographical comparison for "HH:mm" format
 
       // If fields are missing or invalid, show an error message
@@ -180,7 +195,10 @@ object ProjectDetailsPageView {
         errorMessageVar.set("") // No errors
       }
 
-      formValidVar.set(isStartTimeFilled && isEndTimeFilled && isDateFilled && isValidTime.getOrElse(false))
+      formValidVar.set(
+        isStartTimeFilled && isEndTimeFilled && isDateFilled && isValidTime
+          .getOrElse(false)
+      )
     }
 
     div(
@@ -194,7 +212,6 @@ object ProjectDetailsPageView {
           onClick --> { _ => isTimeTrackingSidebarVisible.set(false) }
         )
       ),
-
       div(
         cls := "sidebar-content",
         div(
@@ -208,7 +225,6 @@ object ProjectDetailsPageView {
             }
           ) // Date input field
         ),
-
         div(
           cls := "form-field",
           span("Beginn: "),
@@ -218,10 +234,9 @@ object ProjectDetailsPageView {
               startTimeVar.set(value)
               validateForm()
             },
-          styleAttr := "margin-left: 1em; width: 6em;"
+            styleAttr := "margin-left: 1em; width: 6em;"
           )
         ),
-
         div(
           cls := "form-field",
           span("Ende: "),
@@ -231,22 +246,22 @@ object ProjectDetailsPageView {
               endTimeVar.set(value)
               validateForm()
             },
-          styleAttr := "margin-left: 1em; width: 6em;"
+            styleAttr := "margin-left: 1em; width: 6em;"
           )
         ),
 
         // Show error message if form is invalid
         child <-- errorMessageVar.signal.map {
-          case "" => emptyNode
+          case ""      => emptyNode
           case message => div(cls := "error-message", message)
         },
-
         button(
           cls := "submit-button",
           "Speichern",
           disabled <-- formValidVar.signal.map(!_),
           onClick.map(_ =>
-            val addedTime = calculateDuration(startTimeVar.now(), endTimeVar.now())
+            val addedTime =
+              calculateDuration(startTimeVar.now(), endTimeVar.now())
             // Update the project list reactively
             val updatedProject =
               project.copy(timeTracked = project.timeTracked + addedTime)
@@ -266,8 +281,10 @@ object ProjectDetailsPageView {
     val startParts = startTime.split(":").map(_.toInt)
     val endParts = endTime.split(":").map(_.toInt)
 
-    val startMinutes = startParts(0) * 60 + startParts(1)  // Convert start time to total minutes
-    val endMinutes = endParts(0) * 60 + endParts(1)      // Convert end time to total minutes
+    val startMinutes =
+      startParts(0) * 60 + startParts(1) // Convert start time to total minutes
+    val endMinutes =
+      endParts(0) * 60 + endParts(1) // Convert end time to total minutes
 
     // If the end time is earlier than the start time, it means the end time is on the next day
     val durationInMinutes = if (endMinutes < startMinutes) {

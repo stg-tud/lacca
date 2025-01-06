@@ -2,12 +2,15 @@ import org.scalajs.linker.interface.ModuleSplitStyle
 
 lazy val kanban = project
   .in(file("."))
-  .enablePlugins(ScalaJSPlugin) // Enable the Scala.js plugin in this project
+  .enablePlugins(ScalaJSPlugin,
+    ScalablyTypedConverterExternalNpmPlugin) // Enable the Scala.js plugin in this project
   .settings(
     name := "kanban",
     scalaVersion := "3.4.3",
     // Tell Scala.js that this is an application with a main method
     scalaJSUseMainModuleInitializer := true,
+    externalNpm := baseDirectory.value,
+
     /* Configure Scala.js to emit modules in the optimal way to
      * connect to Vite's incremental reload.
      * - emit ECMAScript modules

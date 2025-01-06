@@ -2,15 +2,20 @@ package kanban
 
 import com.raquo.airstream.ownership.ManualOwner
 import com.raquo.laminar.api.L.{*, given}
+import com.raquo.laminar.modifiers.RenderableText
 import kanban.AddProjectFormView.*
 import kanban.DragAndDrop.*
 import kanban.ProjectCommands.update
 import kanban.models.*
+import kanban.service.ProjectService.{createProject, getAllProjects}
+import kanban.service.UserService.getAllUsers
 import kanban.Pages.*
-
+import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
 
 enum ProjectCommands:
+  // TODO: pass fields instead of project object?
   case add(project: Project)
   case delete(id: ProjectId)
   case update(id: ProjectId, newValue: Project)
@@ -20,10 +25,24 @@ object KanbanBoardPageView {
   val toggleDisplay: Var[String] = Var("none")
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
-  val revisors: List[String] =
-    List("Manas", "Jakob", "Julian", "Bach", "Bearbeiter")
-  val selectedRevisorVar = Var("Bearbeiter")
+
+  val revisorsListVar: Var[List[User]] = Var(List())
+  getAllUsers().onComplete {
+    case Success(users) =>
+      revisorsListVar.set(users.toList)
+    case Failure(exception) =>
+      println(s"Failed to retrieve users from the db! Exception: $exception")
+  }
+  val selectedRevisorVar = Var(0)
   val selectedDeadlineVar = Var(Option.empty[Date])
+  val projectsListVar: Var[List[Project]] = Var(List())
+  getAllProjects().onComplete {
+    case Success(projects) =>
+      projectsListVar.set(projects.toList)
+    case Failure(exception) =>
+      println(s"Failed to retrieve projects from the db! Exception: $exception")
+  }
+
   val showKanbanBoard: Var[Boolean] = Var(
     true
   ) // Initially, the Kanban board is shown
@@ -31,10 +50,16 @@ object KanbanBoardPageView {
 
   val projectCommandBus: EventBus[ProjectCommands] =
     new EventBus[ProjectCommands]
+
   val projectsMap: Signal[Map[ProjectId, Project]] = projectCommandBus.stream
     .scanLeft(Map.empty[ProjectId, Project])((projectMap, command) =>
       command match
         case ProjectCommands.add(project) =>
+          println(s"projectcommands.add matched")
+          createProject(project).onComplete {
+            case Success(value)     => println(s"project created!")
+            case Failure(exception) => println(s"project creation failed!")
+          }
           projectMap + (project.id -> project)
         case ProjectCommands.delete(id) => projectMap.removed(id)
         case ProjectCommands.update(id, newProject) =>
@@ -42,15 +67,20 @@ object KanbanBoardPageView {
         case ProjectCommands.modifyStatus(id, newStatus) =>
           projectMap.updatedWith(id)(old => old.map(_.copy(status = newStatus)))
     )
-  val projectsSignal: Signal[List[Project]] = projectsMap.map(_.values.toList)
-  given ManualOwner()
-  projectCommandBus.stream.addObserver(Observer(c => println(s"command: $c")))
-
+  // currently using this signal to retrieve projects from the db and render them
+  val projectsSignal: Signal[List[Project]] = projectsListVar.signal
+  // TODO:remove this signal during the code refactoring
+  val projectsSignalOld: Signal[List[Project]] =
+    projectsMap.map(_.values.toList)
+  projectsSignalOld.addObserver(
+    Observer(pl => println(s"Updated projects list: $pl"))
+  )
   val selectedProject: Signal[Option[Project]] =
     projectsMap.combineWith(selectedProjectVar).map {
       case (projects, Some(id)) => projects.get(id)
       case _                    => None
     }
+  projectCommandBus.stream.addObserver(Observer(c => println(s"command: $c")))
 
   def apply(): HtmlElement = {
     setupDragAndDrop(updateProjectStatus)
@@ -70,26 +100,14 @@ object KanbanBoardPageView {
     projectCommandBus.emit(ProjectCommands.modifyStatus(projectId, newStatus))
   }
 
-  def addNewProject(project: Project): Unit = {
-    projectCommandBus.emit(ProjectCommands.add(project))
-  }
-
-  def removeProject(projectId: ProjectId): Unit = {
-    projectCommandBus.emit(ProjectCommands.delete(projectId))
-  }
-
-  // Function to format the Date as "YYYY-MM-DD"
-  def formatDate(date: Option[Date]): String = {
-    if (date.nonEmpty) {
-      val convertedDate: Date = date.getOrElse(new Date())
-      convertedDate.toLocaleDateString() // Formats as "YYYY-MM-DD"
-    } else {
-      ""
-    }
-  }
-
   def renderKanbanBoard(): HtmlElement = {
     val kanbanElement = div(
+      // TODO: This div was created to have atleast one observable on projectsSignalOld
+      // remove this after the code refactoring
+      div(
+        text <-- projectsSignalOld.signal.map(p => "sdfsd"),
+        display := "none"
+      ),
       idAttr := "kanbanboard-container",
       // Date filter
       input(
@@ -107,14 +125,22 @@ object KanbanBoardPageView {
       // Revisor filter
       select(
         idAttr := "revisor",
-        // Populate the dropdown options based on the `revisors` list
-        revisors.map(revisor =>
-          if (revisor == "Bearbeiter")
-            option(value := revisor, revisor, selected := true)
-          else option(value := revisor, revisor)
+        option(
+          value := "",
+          selected := true,
+          hidden := true,
+          disabled := true,
+          "Choose revisor"
         ),
+        children <-- revisorsListVar.signal.map { users =>
+          users.map { user =>
+            option(value := user.id.getOrElse(0).toString, user.name)
+          }
+        },
         onChange.mapToValue --> { value =>
-          selectedRevisorVar.set(value) // Update the selected revisor variable
+          selectedRevisorVar.set(
+            value.toInt
+          ) // Update the selected revisor variable
         }
       ),
       div(
@@ -134,7 +160,7 @@ object KanbanBoardPageView {
                 .map {
                   (
                       list: List[Project],
-                      selectedRevisor: String,
+                      selectedRevisor: Int,
                       selectedDeadline: Option[Date]
                   ) =>
                     list
@@ -142,7 +168,9 @@ object KanbanBoardPageView {
                         p.status.toString == columnTitle
                       ) // Filter by status (column)
                       .filter(p =>
-                        selectedRevisor == "Bearbeiter" || p.revisor.toString == selectedRevisor
+                        selectedRevisor == 0 || p.revisorId == Some(
+                          selectedRevisor
+                        )
                       ) // Filter by revisor
                       .filter { p =>
                         selectedDeadline match {
@@ -179,7 +207,7 @@ object KanbanBoardPageView {
   }
 
   def renderProjectCard(
-      projectId: String,
+      projectId: ProjectId,
       initialProject: Project,
       projectSignal: Signal[Project]
   ): HtmlElement = {
@@ -192,9 +220,12 @@ object KanbanBoardPageView {
         onClick --> (_ => removeProject(projectId))
       ),
       br(),
-      text <-- projectSignal.map(p => formatDate(p.deadline)),
+      text <-- projectSignal.map(p => {
+        formatDate(p.deadline)
+      }),
       br(),
-      text <-- projectSignal.map(_.revisor.toString),
+      text <-- projectSignal.map(_.revisorId.getOrElse(0).toString),
+      dataAttr("project-id") <-- projectSignal.map(_.id.toString),
       dataAttr("name") <-- projectSignal.map(_.name),
       dataAttr("x") := "0",
       dataAttr("y") := "0",
@@ -205,4 +236,24 @@ object KanbanBoardPageView {
       }
     )
   }
+
+  def addNewProject(project: Project): Unit = {
+    projectCommandBus.emit(ProjectCommands.add(project))
+  }
+
+  def removeProject(projectId: ProjectId): Unit = {
+    projectCommandBus.emit(ProjectCommands.delete(projectId))
+  }
+
+  // Function to format the Date as "YYYY-MM-DD"
+  def formatDate(date: Option[Date]): String = {
+    if (date.nonEmpty) {
+      val convertedDate: Date = date.getOrElse(new Date())
+      convertedDate.toLocaleDateString // Formats as "YYYY-MM-DD"
+    } else {
+      ""
+    }
+  }
+
+  given ManualOwner()
 }

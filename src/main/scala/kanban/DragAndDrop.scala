@@ -49,8 +49,9 @@ object DragAndDrop {
             println(s"Dropzone Status: $idAttr")
             val newStatus = ProjectStatus.valueOf(idAttr)
             val projectName = draggableElement.getAttribute("data-name")
+            val projectId:Option[Int] = Some(draggableElement.getAttribute("data-project-id").toInt)
 
-            updateProjectStatus(projectName, newStatus)
+            updateProjectStatus(projectId, newStatus)
 
             draggableElement.remove()
             draggableElement.setAttribute("data-x", "0")

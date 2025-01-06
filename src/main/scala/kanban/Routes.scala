@@ -11,8 +11,9 @@ val routes = List(
   Route.static(SignupPage, root / "signup" / endOfSegments),
   Route.static(KanbanBoardPage, root / "kanbanboard" / endOfSegments),
   Route[ProjectDetailsPage, String](
-    encode = projectDetailsPage => projectDetailsPage.id,
-    decode = arg => ProjectDetailsPage(id = arg),
+    encode =
+      projectDetailsPage => projectDetailsPage.id.getOrElse(0).toString(),
+    decode = arg => ProjectDetailsPage(id = arg.toIntOption),
     pattern = root / "projectDetails" / segment[String] / endOfSegments
   )
 )
