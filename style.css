@@ -197,6 +197,59 @@ body {
   cursor: pointer;
 }
 
+/* Style for the account sidebar */
+.account-sidebar {
+  position: fixed;             /* Fix the sidebar on the screen */
+  top: 0;                      /* Align to the top */
+  right: 0;                    /* Align to the right */
+  width: 250px;                /* Sidebar width */
+  height: 100%;                /* Full height of the viewport */
+  background-color: rgb(0, 0, 0); /* Solid black background */
+  color: white;                /* Text color */
+  z-index: 1000;               /* Make sure it's above other content */
+  padding: 20px;               /* Add padding for content inside the sidebar */
+  display: none;               /* Initially hide the sidebar */
+  transition: transform 0.3s ease-in-out; /* Smooth transition */
+}
+
+/* When sidebar is visible */
+.account-sidebar.show {
+  display: block;              /* Make the sidebar visible */
+  transform: translateX(0);    /* Show the sidebar (slide in from the right) */
+}
+
+/* Header of the sidebar */
+.account-sidebar-header {
+  display: flex;
+  justify-content: space-between; /* Space between username and close button */
+  align-items: center;            /* Align items vertically */
+  margin-bottom: 20px;            /* Space between header and links */
+}
+
+/* Close button styling */
+.close-sidebar-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+/* Links inside the sidebar */
+.account-sidebar-links ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.account-sidebar-links li {
+  margin-bottom: 10px;
+}
+
+.account-sidebar-links a {
+  color: white;
+  text-decoration: none;
+}
 
 
 /**/

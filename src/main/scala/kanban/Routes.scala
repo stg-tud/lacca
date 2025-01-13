@@ -15,5 +15,6 @@ val routes = List(
       projectDetailsPage => projectDetailsPage.id.getOrElse(0).toString(),
     decode = arg => ProjectDetailsPage(id = arg.toIntOption),
     pattern = root / "projectDetails" / segment[String] / endOfSegments
-  )
+  ),
+  Route.static(AccountOverviewPage, root / "accountOverview" / endOfSegments)
 )

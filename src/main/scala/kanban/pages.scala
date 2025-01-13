@@ -11,6 +11,7 @@ object Pages {
   case object SignupPage extends Page("Sign Up")
   case object KanbanBoardPage extends Page("Kanban Board")
   case class ProjectDetailsPage(id: ProjectId) extends Page("Project Details")
+  case object AccountOverviewPage extends Page("Account Overview")
 
   given pageCodec: Codec[Page] = deriveAllCodecs
 }
