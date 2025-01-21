@@ -1,10 +1,10 @@
-package kanban
+package kanban.routing
 
 import com.raquo.laminar.api.L.*
 import com.raquo.waypoint
 import io.bullet.borer.*
-import kanban.Pages.Page
-import kanban.routes
+import kanban.routing.Pages
+import kanban.routing.Pages.Page
 
 import java.nio.charset.StandardCharsets
 
@@ -15,7 +15,7 @@ object Router
       serializePage = page => Json.encode(page).toUtf8String,
       deserializePage = pageStr =>
         Json.decode(pageStr.getBytes(StandardCharsets.UTF_8)).to[Page].value,
-      routeFallback = _ => Pages.LoginPage
+      routeFallback = _ => Pages.KanbanBoardPage
     )(
       popStateEvents = windowEvents(
         _.onPopState

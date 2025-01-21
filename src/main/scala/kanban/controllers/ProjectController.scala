@@ -1,0 +1,84 @@
+package kanban.controllers
+
+import scala.util.{Failure, Success}
+import com.raquo.airstream.ownership.ManualOwner
+import com.raquo.laminar.api.L.{*, given}
+import kanban.domain.events.ProjectEvent
+import kanban.domain.models.{Project, ProjectId, ProjectStatus}
+import kanban.service.ProjectService
+import kanban.service.ProjectService.{createProject, deleteProject, getAllProjects, updateProject}
+import typings.dexie.mod.liveQuery
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js
+import kanban.service.ProjectService.projectsObservable
+import kanban.service.ProjectService.updateProjectStatusById
+import com.raquo.waypoint.Router
+
+object ProjectController {
+    val projects: Var[List[Project]] = Var(List.empty)
+
+    val projectEventBus: EventBus[ProjectEvent] = new EventBus[ProjectEvent]
+
+    projectsObservable.subscribe(
+        next = (queryResultFuture) => queryResultFuture.onComplete {
+            case Success(projectsList) => {
+                projects.set(projectsList.toList)
+                println(s"Projects changed: ${projectsList.toList}")
+            }
+            case Failure(exception) => println(s"Error observing projects: $exception")
+        },
+        error = (error) => println(s"Error observing projects: $error")
+        //complete = ? (not needed)
+    )
+
+    projectEventBus.events.foreach {
+        case ProjectEvent.Added(project) =>
+            println("create project event received")
+            createProject(project).onComplete {
+                case Success(_) =>
+                    println(s"Project with id: ${project.id.get} added successfully!")
+                case Failure(exception) =>
+                    println(s"Failed to add project with id: ${project.id.get}. Exception: $exception")
+            }
+        case ProjectEvent.Deleted(id) =>
+            println("delete project event received")
+            deleteProject(id).onComplete {
+                case Success(_) =>
+                    println(s"Project with id: ${id.get} deleted successfully!")
+                case Failure(exception) =>
+                    println(s"Failed to delete project with id: ${id.get}. Exception: $exception")
+            }
+        case ProjectEvent.Updated(id, updatedProject) =>
+            println("update project event received")
+            updateProject(id, updatedProject).onComplete {
+                case Success(_) =>
+                    println(s"Project with id: ${id.get} updated successfully!")
+                case Failure(exception) =>
+                    println(s"Failed to update project with id: ${id.get}. Exception: $exception")
+            }
+        case ProjectEvent.StatusModified(id, newStatus) =>
+            //TODO: Implement status modification
+            println(s"Status modification event received for project with id: ${id.get}")
+            updateProjectStatusById(id, newStatus).onComplete {
+                case Success(_) =>
+                    println(s"Project with id: ${id.get} status updated successfully!")
+                case Failure(exception) =>
+                    println(s"Failed to update project with id: ${id.get} status. Exception: $exception")
+            }
+
+        case ProjectEvent.ClickedOn(projectSignal) =>
+            println(s"Clicked on project with id:}")
+            //Router.pushState(ProjectDetailsPage(projectSignal))
+    }
+
+    def loadProjects(): Unit = {
+        println("load projects called!")
+        getAllProjects().onComplete {
+            case Success(data) => projects.set(data.toList)
+            case Failure(exception) => println(s"Failed to load projects: $exception")
+        }
+    }
+
+    given ManualOwner()
+}

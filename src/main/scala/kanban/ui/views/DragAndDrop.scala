@@ -1,14 +1,14 @@
-package kanban
+package kanban.ui.views
 
-import kanban.models.{ProjectId, ProjectStatus}
+import scala.scalajs.js
+import kanban.domain.models.{ProjectId, ProjectStatus}
 import org.scalajs.dom.html.Div
-
-import scala.scalajs.js // Adjust the path if necessary
+import kanban.controllers.ProjectController.projectEventBus
+import kanban.domain.events.ProjectEvent.Updated
+import kanban.domain.events.ProjectEvent.StatusModified
 
 object DragAndDrop {
-  def setupDragAndDrop(
-      updateProjectStatus: (ProjectId, ProjectStatus) => Unit
-  ): Unit = {
+  def setupDragAndDrop(): Unit = {
     js.Dynamic.global
       .interact(".kanban-card")
       .draggable(
@@ -51,7 +51,9 @@ object DragAndDrop {
             val projectName = draggableElement.getAttribute("data-name")
             val projectId:Option[Int] = Some(draggableElement.getAttribute("data-project-id").toInt)
 
-            updateProjectStatus(projectId, newStatus)
+            println(s"projectId when dropped: $projectId")
+            projectEventBus.emit(StatusModified(projectId, newStatus))
+            //updateProjectStatus(projectId, newStatus)
 
             draggableElement.remove()
             draggableElement.setAttribute("data-x", "0")
@@ -91,3 +93,4 @@ object DragAndDrop {
       )
   }
 }
+
