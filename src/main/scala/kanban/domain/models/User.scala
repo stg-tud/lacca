@@ -10,7 +10,8 @@ case class User(
                    id: UserId,
                    name: String,
                    age: Int,
-                   email: String
+                   email: String,
+                   password: String
                ) {
     def toJsObject: UserJsObject = {
         js.Dynamic
@@ -18,7 +19,8 @@ case class User(
                 id = this.id.orUndefined,
                 name = this.name,
                 age = this.age,
-                email = this.email
+                email = this.email,
+                password = this.password
             )
             .asInstanceOf[UserJsObject]
     }
@@ -29,4 +31,5 @@ trait UserJsObject extends js.Object {
     val name: String
     val age: Int
     val email: String
+    val password: String
 }

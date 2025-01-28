@@ -40,7 +40,8 @@ object UserService {
       id = userJsObject.id.toOption,
       name = userJsObject.name,
       age = userJsObject.age,
-      email = userJsObject.email
+      email = userJsObject.email,
+      password = userJsObject.password
     )
   }
 }

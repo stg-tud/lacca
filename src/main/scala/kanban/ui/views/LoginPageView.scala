@@ -3,19 +3,47 @@ package kanban.ui.views
 import com.raquo.laminar.api.L.{*, given}
 import kanban.routing.Pages.KanbanBoardPage
 import kanban.routing.Router
+import kanban.service.UserService.{getAllUsers}
+import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.ExecutionContext.Implicits.global 
+import scala.util.{Success, Failure}
 
 object LoginPageView {
     def apply(): HtmlElement = {
 
         val messageVar = Var("")
 
+        val usernameVar = Var("")
+        val passwordVar = Var("")
+
+        // Function to check credentials against the database
+        def checkCredentials(username: String, password: String): Future[Boolean] = {
+            getAllUsers().map { users =>
+            // Check if the user exists and credentials match
+            users.exists(user => user.name == username && user.password == password)
+            }
+        }
+
         val loginFormElement = div(
-            className := "login-form-container",
-            h2("Login"),
+            className := "login-container",
+            h2(cls := "login-heading", "Login to Your Account"),
             form(
                 onSubmit.preventDefault.mapTo(()) --> { _ =>
-                    // TODO: only allow after credentials match
-                    Router.pushState(KanbanBoardPage)
+                    val username = usernameVar.now()
+                    val password = passwordVar.now()
+                    // Check credentials in the database
+                    checkCredentials(username, password).onComplete {
+                        case Success(isValid) =>
+                            if (isValid) {
+                                messageVar.set("Login successful")
+                                // Navigate to KanbanBoardPage on successful login
+                                Router.pushState(KanbanBoardPage)
+                            } else {
+                                messageVar.set("Incorrect credentials, please try again")
+                            }
+                        case Failure(exception) =>
+                            messageVar.set(s"Error checking credentials: ${exception.getMessage}")
+                    }
                 },
                 div(
                     className := "form-group",
@@ -24,7 +52,9 @@ object LoginPageView {
                         typ := "text",
                         idAttr := "username",
                         // name := "username",
-                        required := true
+                        cls := "form-input",
+                        required := true,
+                        onInput.mapToValue --> usernameVar // Bind username input
                     )
                 ),
                 div(
@@ -34,17 +64,23 @@ object LoginPageView {
                         typ := "password",
                         idAttr := "password",
                         // name := "password",
-                        required := true
+                        cls := "form-input",
+                        required := true,
+                        onInput.mapToValue --> passwordVar // Bind password input
                     )
                 ),
                 div(
                     className := "form-group",
                     button(
                         typ := "submit",
+                        cls := "login-button",
                         "Login"
                     )
                 ),
-                child.text <-- messageVar.signal
+                div(
+                    cls := "error-message",
+                    child.text <-- messageVar.signal
+                )
             )
         )
         return loginFormElement

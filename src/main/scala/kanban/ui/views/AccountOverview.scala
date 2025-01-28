@@ -18,6 +18,7 @@ object AccountOverview {
     val newNameVar: Var[String] = Var("")
     val newAgeVar: Var[Int] = Var(0)
     val newEmailVar: Var[String] = Var("")
+    val newPasswordVar: Var[String] = Var("")
 
     div(
       cls := "modal",
@@ -32,7 +33,10 @@ object AccountOverview {
             users.map { user =>
               div(
                 cls := "user-item",
-                child.text <-- Signal.fromValue(user.name),
+                div(cls := "user-info", s"Name: ${user.name}"),
+                div(cls := "user-info", s"Alter: ${user.age}"),
+                div(cls := "user-info", s"Email: ${user.email}"),
+                div(cls := "user-info", s"Password: ${user.password}"),
                 button(
                   cls := "delete-user-button",
                   "Löschen"
@@ -70,7 +74,8 @@ object AccountOverview {
                     id = None,
                     name = newNameVar.now(),
                     age = newAgeVar.now(),
-                    email = newEmailVar.now()
+                    email = newEmailVar.now(),
+                    password = newPasswordVar.now()
                   )
                 )
               )
