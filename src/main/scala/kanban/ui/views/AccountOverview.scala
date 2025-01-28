@@ -7,7 +7,7 @@ import kanban.domain.events.UserEvent
 import kanban.routing.Pages.*
 import kanban.domain.models.*
 import kanban.routing.Router
-import kanban.service.UserService.{createUser, getAllUsers}
+import kanban.service.UserService.{createUser, getAllUsers, deleteUser}
 
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +39,21 @@ object AccountOverview {
                 div(cls := "user-info", s"Password: ${user.password}"),
                 button(
                   cls := "delete-user-button",
-                  "Löschen"
+                  "Löschen",
+                  onClick --> { _ =>
+                    user.id match {
+                      case Some(userId) =>
+                        deleteUser(Some(userId)).onComplete {
+                          case Success(_) =>
+                            println(s"User with ID $userId deleted successfully.")
+                            userEventBus.emit(UserEvent.Deleted(Some(userId)))
+                          case Failure(exception) =>
+                            println(s"Failed to delete user: ${exception.getMessage}")
+                        }
+                      case None =>
+                        println("User ID is not defined, cannot delete.")
+                    }
+                  }
                 )
               )
             }
@@ -64,6 +78,11 @@ object AccountOverview {
             cls := "user-email-input",
             placeholder := "Email",
             onInput.mapToValue --> newEmailVar
+          ),
+          input(
+            cls := "user-password-input",
+            placeholder := "Password",
+            onInput.mapToValue --> newPasswordVar
           ),
           button(
             cls := "add-user-button",
