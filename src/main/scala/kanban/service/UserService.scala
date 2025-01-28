@@ -1,6 +1,6 @@
 package kanban.service
 
-import kanban.domain.models.{User, UserJsObject}
+import kanban.domain.models.{User, UserId, UserJsObject}
 import kanban.persistence.DexieDB.dexieDB
 import org.scalablytyped.runtime.StringDictionary
 import typings.dexie.mod.{Dexie, Table, UpdateSpec, liveQuery}
@@ -27,6 +27,13 @@ object UserService {
     }
   }
   val usersObservable = liveQuery(() => getAllUsers())
+  
+  def deleteUser(id: UserId): Future[Unit] = {
+    usersTable.delete(id.getOrElse{
+        println(s"userId is not defined!!")
+        0
+    }).toFuture
+  }
 
   def fromJsObject(userJsObject: UserJsObject): User = {
     User(

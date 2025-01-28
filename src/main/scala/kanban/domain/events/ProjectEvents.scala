@@ -10,5 +10,5 @@ object ProjectEvent {
     case class Updated(id: ProjectId, updatedProject: Project) extends ProjectEvent
     case class Deleted(id: ProjectId) extends ProjectEvent
     case class StatusModified(id: ProjectId, newStatus: ProjectStatus) extends ProjectEvent
-    case class ClickedOn(projectSignal: Signal[Project]) extends ProjectEvent
+    case class ClickedOn(projectId: ProjectId) extends ProjectEvent
 }

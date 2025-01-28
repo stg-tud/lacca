@@ -14,7 +14,6 @@ object LoginPageView {
             h2("Login"),
             form(
                 onSubmit.preventDefault.mapTo(()) --> { _ =>
-                    // messageVar.set("Incorrect credentials")
                     // TODO: only allow after credentials match
                     Router.pushState(KanbanBoardPage)
                 },

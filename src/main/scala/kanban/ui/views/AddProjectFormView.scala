@@ -1,39 +1,29 @@
 package kanban.ui.views
 
 import com.raquo.laminar.api.L.{*, given}
+import kanban.controllers.ProjectController.projectEventBus
+import kanban.controllers.UserController
+import kanban.domain.events.ProjectEvent.Added
 import kanban.domain.models.{Project, ProjectStatus, User}
-import KanbanBoardPageView.*
 import kanban.service.UserService.getAllUsers
+import kanban.ui.views.KanbanBoardPageView.toggleDisplay
 import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
 import scala.util.{Failure, Success}
-import kanban.controllers.ProjectController.projectEventBus
-import kanban.domain.events.ProjectEvent.Added
 
 
 object AddProjectFormView {
-    //laminar reactive variables that store the state of the UI
     val projectName = Var("")
     val projectDeadline = Var(Option.empty[Date])
     val projectRevisorId = Var(Option.empty[Int])
     val projectStatus = Var(ProjectStatus.Neu.toString())
     val timeTracked = Var(0.0)
 
-    //other variables
     val projectStatusValues: List[String] =
         ProjectStatus.values.map(_.toString).toList
-    
-    //get data from the database
-    val revisors = List(
-        User(Some(1), "User 1", 22, "user1@gmail.com"),
-        User(Some(2), "User 2", 23, "user2@gmail.com"),
-        User(Some(3), "User 3", 24, "user3@gmamil.com")
-    )
-    val revisorsListVar: Var[List[User]] = Var(revisors)
 
-    //Render UI
     def apply(): HtmlElement = {
         div(
             idAttr := "add-project-form",
@@ -73,7 +63,7 @@ object AddProjectFormView {
                             hidden := true,
                             "Choose revisor"
                         ),
-                        children <-- revisorsListVar.signal.map { users =>
+                        children <-- UserController.users.signal.map { users =>
                             users.map {
                                 user =>
                                     option(
@@ -86,7 +76,7 @@ object AddProjectFormView {
                             if (userId.nonEmpty) {
                                 projectRevisorId.set(
                                     Some(userId.toInt)
-                                ) // Set deadline as a Date object
+                                ) 
                             } else {
                                 println(s"userId is empty!!")
                             }
@@ -103,7 +93,7 @@ object AddProjectFormView {
                             if (dateStr.nonEmpty) {
                                 projectDeadline.set(
                                     Some(new Date(dateStr))
-                                ) // Set deadline as a Date object
+                                ) 
                             } else {
                                 projectDeadline.set(None) // No deadline selected
                             }

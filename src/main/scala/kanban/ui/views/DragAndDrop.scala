@@ -43,17 +43,19 @@ object DragAndDrop {
           accept = ".kanban-card",
           overlap = 0.5,
           ondrop = (event: js.Dynamic) => {
+            print("dropped")
             val draggableElement = event.relatedTarget.asInstanceOf[Div]
             val dropzoneElement = event.target.asInstanceOf[Div]
             val idAttr = dropzoneElement.id.replace("column-", "")
             println(s"Dropzone Status: $idAttr")
             val newStatus = ProjectStatus.valueOf(idAttr)
             val projectName = draggableElement.getAttribute("data-name")
-            val projectId:Option[Int] = Some(draggableElement.getAttribute("data-project-id").toInt)
+            val projectId: ProjectId =
+              Some(draggableElement.getAttribute("data-project-id").toInt)
 
             println(s"projectId when dropped: $projectId")
             projectEventBus.emit(StatusModified(projectId, newStatus))
-            //updateProjectStatus(projectId, newStatus)
+            
 
             draggableElement.remove()
             draggableElement.setAttribute("data-x", "0")
@@ -93,4 +95,3 @@ object DragAndDrop {
       )
   }
 }
-
