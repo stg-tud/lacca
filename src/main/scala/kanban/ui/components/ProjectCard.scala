@@ -3,7 +3,8 @@ package kanban.ui.components
 import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.ProjectController.projectEventBus
 import kanban.domain.models.{Project, ProjectId}
-import kanban.domain.events.ProjectEvent.{Deleted, ClickedOn}
+import kanban.domain.events.ProjectEvent.{ClickedOn, Deleted}
+import org.scalajs.dom.HTMLElement
 
 import scala.scalajs.js.Date
 
@@ -30,7 +31,9 @@ object ProjectCard {
       dataAttr("x") := "0",
       dataAttr("y") := "0",
 
-      onClick --> { _ => projectEventBus.emit(ClickedOn(projectId)) }
+      onClick --> { e =>
+        if (!e.target.asInstanceOf[HTMLElement].classList.contains("delete-project-button"))
+          projectEventBus.emit(ClickedOn(projectId)) }
     )
   }
 
