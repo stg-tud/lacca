@@ -8,6 +8,7 @@ import typings.dexie.mod.{Dexie, Table, UpdateSpec, liveQuery}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.scalajs.js
+import kanban.persistence.BcryptJS
 
 object UserService {
 
@@ -43,5 +44,14 @@ object UserService {
       email = userJsObject.email,
       password = userJsObject.password
     )
+  }
+
+  def hashPassword(password: String): String = {
+    // Generate a hash for the password
+    BcryptJS.hashSync(password, 10)  // 10 is the number of salt rounds
+  }
+
+  def checkPassword(password: String, hash: String): Boolean = {
+    BcryptJS.compareSync(password, hash)
   }
 }

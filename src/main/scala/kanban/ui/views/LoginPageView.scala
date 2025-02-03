@@ -3,7 +3,7 @@ package kanban.ui.views
 import com.raquo.laminar.api.L.{*, given}
 import kanban.routing.Pages.KanbanBoardPage
 import kanban.routing.Router
-import kanban.service.UserService.{getAllUsers}
+import kanban.service.UserService.*
 import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.ExecutionContext.Implicits.global 
 import scala.util.{Success, Failure}
@@ -20,7 +20,7 @@ object LoginPageView {
         def checkCredentials(username: String, password: String): Future[Boolean] = {
             getAllUsers().map { users =>
             // Check if the user exists and credentials match
-            users.exists(user => user.name == username && user.password == password)
+            users.exists(user => user.name == username && checkPassword(password, user.password))
             }
         }
 

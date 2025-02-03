@@ -7,7 +7,7 @@ import kanban.domain.events.UserEvent
 import kanban.routing.Pages.*
 import kanban.domain.models.*
 import kanban.routing.Router
-import kanban.service.UserService.{createUser, getAllUsers, deleteUser}
+import kanban.service.UserService.*
 
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -87,6 +87,7 @@ object AccountOverview {
           button(
             cls := "add-user-button",
             onClick --> { _ => 
+              val hashedPassword = hashPassword(newPasswordVar.now())
               userEventBus.emit(
                 UserEvent.Added(
                   User(
@@ -94,7 +95,7 @@ object AccountOverview {
                     name = newNameVar.now(),
                     age = newAgeVar.now(),
                     email = newEmailVar.now(),
-                    password = newPasswordVar.now()
+                    password = hashedPassword
                   )
                 )
               )
