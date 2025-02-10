@@ -7,10 +7,11 @@ import kanban.service.UserService.*
 import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.ExecutionContext.Implicits.global 
 import scala.util.{Success, Failure}
+import scala.scalajs.js
 
 // Global state for username with default "Guest"
 object GlobalState {
-    val usernameVar: Var[String] = Var("Guest")
+    val usernameVar = Var(getLoggedInUser().getOrElse("Guest"))
 }
 
 object LoginPageView {
@@ -41,8 +42,10 @@ object LoginPageView {
                         case Success(isValid) =>
                             if (isValid) {
                                 messageVar.set("Login successful")
+                                // Store logged-in username in both GlobalState and localStorage
+                                GlobalState.usernameVar.set(username)
+                                js.Dynamic.global.localStorage.setItem("username", username) // Store in localStorage
                                 // Navigate to KanbanBoardPage on successful login
-                                GlobalState.usernameVar.set(username) // Store logged-in username
                                 Router.pushState(KanbanBoardPage)
                             } else {
                                 messageVar.set("Incorrect credentials, please try again")

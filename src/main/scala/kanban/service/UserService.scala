@@ -54,4 +54,16 @@ object UserService {
   def checkPassword(password: String, hash: String): Boolean = {
     BcryptJS.compareSync(password, hash)
   }
+
+  def saveUserSession(username: String): Unit = {
+    // Save the username in localStorage
+    js.Dynamic.global.localStorage.setItem("username", username)
+  }
+
+  def getLoggedInUser(): Option[String] = {
+    // Retrieve the username from localStorage
+    val username = js.Dynamic.global.localStorage.getItem("username")
+    if (username != null) Some(username.toString) else None
+  }
+  
 }
