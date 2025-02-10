@@ -3,6 +3,7 @@ package kanban.ui.components
 import com.raquo.laminar.api.L.{*, given}
 import kanban.routing.Pages.{AccountOverviewPage, LoginPage}
 import kanban.routing.Router
+import kanban.ui.views.GlobalState // Import global username
 
 object AccountSidebar {
   def apply(showSidebar: Var[Boolean]): HtmlElement = {
@@ -17,7 +18,7 @@ object AccountSidebar {
         cls := "account-sidebar-header",
         div(
           cls := "username",
-          "Username" // Replace with dynamic data if necessary
+          child.text <-- GlobalState.usernameVar.signal // Display the logged-in username
         ),
         button(
           cls := "close-sidebar-button",

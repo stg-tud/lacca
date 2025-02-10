@@ -1,6 +1,7 @@
 package kanban.ui.components
 
 import com.raquo.laminar.api.L.{*, given}
+import kanban.ui.views.GlobalState // Import global username
 
 object NavBar {
   def apply(): HtmlElement = {
@@ -26,7 +27,7 @@ object NavBar {
       ),
       button(
         idAttr := "show-account-sidebar-button",
-        "Username",
+        child.text <-- GlobalState.usernameVar.signal, // Display the current username
         onClick --> { _ =>
           showSidebar.update(currentValue => !currentValue) // Toggle the sidebar visibility
         }
