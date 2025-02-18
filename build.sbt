@@ -11,6 +11,9 @@ lazy val kanban = project
     scalaJSUseMainModuleInitializer := true,
     externalNpm := baseDirectory.value,
 
+    // Ignore Trystero in ScalablyTyped to avoid `stImport` errors
+    stIgnore := List("trystero"),
+
     /* Configure Scala.js to emit modules in the optimal way to
      * connect to Vite's incremental reload.
      * - emit ECMAScript modules

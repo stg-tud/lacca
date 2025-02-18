@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "dexie": "^4.0.10"
+    "dexie": "^4.0.10",
+    "trystero": "^0.20.1"
   }
 }
