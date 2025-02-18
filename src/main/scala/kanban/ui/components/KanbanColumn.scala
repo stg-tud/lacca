@@ -14,9 +14,10 @@ object KanbanColumn {
             div(
                 cls := "kanban-column-content",
                 idAttr := s"column-$title",
-                children <-- projects.split(_.id)((id, initial, projectSignal) =>
-                    ProjectCard(id, projectSignal)
-                )
+                child <-- projects.map(_.nonEmpty).map {
+                  case true => div(children <-- projects.split(_.id)((id, initial, projectSignal) => ProjectCard(id, projectSignal)))
+                  case false => div(cls := "empty-column")
+                }
             )
         )
     }
