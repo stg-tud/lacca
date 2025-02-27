@@ -5,7 +5,7 @@ import com.raquo.airstream.ownership.ManualOwner
 import com.raquo.laminar.api.L.{*, given}
 import kanban.domain.events.ProjectEvent
 import kanban.domain.models.{Project, ProjectId, ProjectStatus, User}
-import kanban.service.ProjectService
+import kanban.service.{ProjectService, TrysteroService}
 import kanban.service.ProjectService.*
 import kanban.service.UserService.usersObservable
 import typings.dexie.mod.liveQuery
@@ -28,6 +28,9 @@ object ProjectController {
         case Success(projectsSeq) => {
           projects.set(projectsSeq.toList)
           println(s"Projects changed: ${projectsSeq.toList}")
+          TrysteroService.sendMessage(
+            s"Projects changed: ${projectsSeq.toList}"
+          )
         }
         case Failure(exception) =>
           println(s"Error observing projects: $exception")
