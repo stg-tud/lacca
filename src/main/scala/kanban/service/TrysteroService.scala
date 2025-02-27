@@ -6,20 +6,23 @@ import typings.trystero.mod.*
 import scala.scalajs.js
 
 object TrysteroService {
-  object eturn extends RTCIceServer:
+  val eturn = new RTCIceServer:
     urls = js.Array(
-      "stun:relay1.expressturn.com:3478",
-      "turn:relay1.expressturn.com:3478"
+      "stun:relay1.expressturn.com:443",
+      "turn:relay1.expressturn.com:3478",
+      "turn:relay1.expressturn.com:443"
     )
     username = "efMS8M021S1G8NJ8J7"
     credential = "qrBXTlhKtCJDykOK"
-  object tturn extends RTCIceServer:
-    urls = js.Array("stun:stun.t-online.de:3478")
-  object rconfig extends RTCConfiguration:
+  val tturn = new RTCIceServer:
+    urls = "stun:stun.t-online.de:3478"
+
+  val rtcConf = new RTCConfiguration:
     iceServers = js.Array(eturn, tturn)
+
   object DefaultConfig extends RelayConfig, BaseRoomConfig {
     var appId = "lacca_test_1270"
-    rtcConfig = rconfig
+    rtcConfig = rtcConf
   }
 
   val room = joinRoom(DefaultConfig, "testroom")
