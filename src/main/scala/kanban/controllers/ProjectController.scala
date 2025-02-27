@@ -1,21 +1,16 @@
 package kanban.controllers
 
-import scala.util.{Failure, Success}
 import com.raquo.airstream.ownership.ManualOwner
 import com.raquo.laminar.api.L.{*, given}
 import kanban.domain.events.ProjectEvent
-import kanban.domain.models.{Project, ProjectId, ProjectStatus, User}
-import kanban.service.{ProjectService, TrysteroService}
-import kanban.service.ProjectService.*
-import kanban.service.UserService.usersObservable
-import typings.dexie.mod.liveQuery
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js
-import kanban.service.ProjectService.projectsObservable
-import kanban.service.ProjectService.updateProjectStatusById
+import kanban.domain.models.{Project, ProjectStatus}
 import kanban.routing.Pages.ProjectDetailsPage
 import kanban.routing.Router
+import kanban.service.ProjectService.*
+import kanban.service.{ProjectService, TrysteroService}
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
