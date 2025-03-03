@@ -57,7 +57,6 @@ object DragAndDrop {
             projectEventBus.emit(StatusModified(projectId, newStatus))
             
 
-            draggableElement.remove()
             draggableElement.setAttribute("data-x", "0")
             draggableElement.setAttribute("data-y", "0")
             draggableElement.style.transform = "translate(0, 0)"
