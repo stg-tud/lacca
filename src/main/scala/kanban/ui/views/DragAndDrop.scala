@@ -8,6 +8,8 @@ import kanban.domain.events.ProjectEvent.Updated
 import kanban.domain.events.ProjectEvent.StatusModified
 
 object DragAndDrop {
+  var isDragging: Boolean = false
+
   def setupDragAndDrop(): Unit = {
     js.Dynamic.global
       .interact(".kanban-card")
@@ -15,6 +17,9 @@ object DragAndDrop {
         js.Dynamic.literal(
           inertia = true,
           autoScroll = true,
+          onstart = (event: js.Dynamic) => {
+            isDragging = true
+          },
           onmove = (event: js.Dynamic) => {
             val target = event.target.asInstanceOf[Div]
             val x = (js.Dynamic.global
@@ -32,6 +37,9 @@ object DragAndDrop {
             target.style.transform = "translate(0, 0)"
             target.setAttribute("data-x", "0")
             target.setAttribute("data-y", "0")
+            js.timers.setTimeout(50) {
+              isDragging = false
+            }
           }
         )
       )

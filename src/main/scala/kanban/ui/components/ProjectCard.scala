@@ -4,6 +4,7 @@ import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.ProjectController.projectEventBus
 import kanban.domain.models.{Project, ProjectId}
 import kanban.domain.events.ProjectEvent.{ClickedOn, Deleted}
+import kanban.ui.views.DragAndDrop.{isDragging}
 import org.scalajs.dom.HTMLElement
 
 import scala.scalajs.js.Date
@@ -32,7 +33,7 @@ object ProjectCard {
       dataAttr("y") := "0",
 
       onClick --> { e =>
-        if (!e.target.asInstanceOf[HTMLElement].classList.contains("delete-project-button"))
+        if (!isDragging && !e.target.asInstanceOf[HTMLElement].classList.contains("delete-project-button"))
           projectEventBus.emit(ClickedOn(projectId)) }
     )
   }
