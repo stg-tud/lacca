@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "dexie": "^4.0.10"
+    "dexie": "^4.0.10",
+    "trystero": "^0.21.0-beta.1"
   }
 }
