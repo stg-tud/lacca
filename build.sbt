@@ -2,8 +2,10 @@ import org.scalajs.linker.interface.ModuleSplitStyle
 
 lazy val kanban = project
   .in(file("."))
-  .enablePlugins(ScalaJSPlugin,
-    ScalablyTypedConverterExternalNpmPlugin) // Enable the Scala.js plugin in this project
+  .enablePlugins(
+    ScalaJSPlugin,
+    ScalablyTypedConverterExternalNpmPlugin
+  ) // Enable the Scala.js plugin in this project
   .settings(
     name := "kanban",
     scalaVersion := "3.4.3",
@@ -11,8 +13,13 @@ lazy val kanban = project
     scalaJSUseMainModuleInitializer := true,
     externalNpm := baseDirectory.value,
 
+<<<<<<< HEAD
     // Ignore Trystero in ScalablyTyped to avoid `stImport` errors
     stIgnore := List("trystero"),
+=======
+    // Ignore several Trystero dependencies in ScalablyTyped to avoid `stImport` errors
+    stIgnore := List("libp2p", "firebase", "@supabase/supabase-js"),
+>>>>>>> 3bf433386836f071bc76ab734776296dc8a44dd4
 
     /* Configure Scala.js to emit modules in the optimal way to
      * connect to Vite's incremental reload.
