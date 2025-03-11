@@ -34,7 +34,8 @@ object UserController {
       println("create user event received")
       UserService.createUser(user).onComplete {
         case Success(_) =>
-          println(s"User with id: ${user.id.get} added successfully!")
+          //println(s"User with id: ${user.id.get} added successfully!")
+          println(s"User added successfully!")
         case Failure(exception) =>
           println(
             s"Failed to add user with id: ${user.id.get}. Exception: $exception"
