@@ -16,7 +16,10 @@ object UserService {
     dexieDB.table("users")
 
   def createUser(user: User): Future[Any] = {
-    usersTable.add(user.toJsObject).toFuture
+    // Add the user and return the result to get the ID after the user is inserted
+    usersTable.add(user.toJsObject).toFuture.map { id =>
+      user.copy(id = Some(id)) // Assign the generated ID to the user
+    }
   }
 
   def getAllUsers(): Future[Seq[User]] = {
