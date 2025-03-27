@@ -137,15 +137,21 @@ object UserController {
       println("delete user event received")
       id match {
         case Some(userId) =>
+          // First, delete the user from the backend (IndexedDB)
           UserService.deleteUser(Some(userId)).onComplete {
             case Success(_) =>
-              println(s"User with id: $userId deleted successfully!")
-              // Send message to other peers
+              println(s"User with id: $userId deleted successfully from IndexedDB!")
+              // Now remove user from the local list
+              val updatedUsers = users.now().filterNot(_.id.contains(userId))
+              users.set(updatedUsers)  // Update local users list
+              println(s"User with id: $userId deleted locally")
+
+              // Send message to other peers about the user deletion
               val message = s"User with ID $userId deleted!"
               TrysteroService.sendMessage(message)
             case Failure(exception) =>
               println(s"Failed to delete user with id: $userId. Exception: $exception")
-            }
+          }
         case None =>
           println("User ID is not defined, cannot delete.")
       }
