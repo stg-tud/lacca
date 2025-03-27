@@ -15,6 +15,18 @@ object UserController {
 
   val userEventBus: EventBus[UserEvent] = new EventBus[UserEvent]
 
+  def fetchUsers(): Unit = {
+    UserService.getAllUsers().onComplete {
+      case Success(userList) =>
+        users.set(userList.toList) // Update UI with latest users
+        println(s"Fetched users from IndexedDB: $userList")
+      case Failure(exception) =>
+        println(s"Failed to fetch users from IndexedDB: $exception")
+    }
+  }
+
+  fetchUsers()
+
   usersObservable.subscribe(
     next = (queryResultFuture) =>
       queryResultFuture.onComplete {
@@ -59,11 +71,25 @@ object UserController {
             throw new Exception(s"Invalid user data: $userStr")
           }
         }
-        // Merge users instead of replacing
-        val mergedUsers = (users.now() ++ updatedUsers).distinctBy(_.id)
-        users.set(mergedUsers)
+        // Avoid infinite loops by checking for duplicates
+        val existingUsers = users.now()
+        val newUsers = updatedUsers.filterNot(user => existingUsers.exists(_.id == user.id))
 
-        println(s"Updated local users list: $mergedUsers")
+        if (newUsers.nonEmpty) {
+          val mergedUsers = (existingUsers ++ newUsers).distinctBy(_.id)
+          users.set(mergedUsers)
+
+          // Save only new users to IndexedDB
+          newUsers.foreach { user =>
+            UserService.createUser(user).foreach(_ =>
+              println(s"User ${user.name} saved to IndexedDB on this peer")
+            )
+          }
+
+          println(s"Updated local users list: $mergedUsers")
+        } else {
+          println("No new users to add, skipping update.")
+        }
       } catch {
         case e: Exception =>
           println(s"Failed to parse users data: $e")
@@ -95,13 +121,8 @@ object UserController {
     case UserEvent.Added(user) =>
       println("create user event received")
 
-      // Prevent redundant user addition
-      if (users.now().exists(_.id == user.id)) {
-        println(s"User ${user.id.getOrElse("")} already exists, skipping add")
-      } else {
-        UserService.createUser(user).onComplete {
+      UserService.createUser(user).onComplete {
           case Success(_) =>
-            //println(s"User with id: ${user.id.get} added successfully!")
             println(s"User added successfully!")
             // After adding user, send a message to other peers
             val message = s"User ${user.name} added! ${user.id.getOrElse("")}:${user.name}:${user.age}:${user.email}:${user.password}"
@@ -110,7 +131,6 @@ object UserController {
             println(
               s"Failed to add user with id: ${user.id.get}. Exception: $exception"
             )
-        }
       }
 
     case UserEvent.Deleted(id) =>
