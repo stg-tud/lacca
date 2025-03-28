@@ -15,18 +15,6 @@ object UserController {
 
   val userEventBus: EventBus[UserEvent] = new EventBus[UserEvent]
 
-  def fetchUsers(): Unit = {
-    UserService.getAllUsers().onComplete {
-      case Success(userList) =>
-        users.set(userList.toList) // Update UI with latest users
-        println(s"Fetched users from IndexedDB: $userList")
-      case Failure(exception) =>
-        println(s"Failed to fetch users from IndexedDB: $exception")
-    }
-  }
-
-  fetchUsers()
-
   // Extracted method for handling incoming user changes from Trystero
   def handleUsersChangedMessage(usersData: String): Unit = {
     try {
