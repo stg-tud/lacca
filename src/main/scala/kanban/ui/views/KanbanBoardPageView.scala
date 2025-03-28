@@ -25,40 +25,42 @@ object KanbanBoardPageView {
       NavBar(),
       div(
         idAttr := "kanbanboard-container",
-        // date filter
-        input(
-          typ := "date",
-          onInput.mapToValue --> { dateStr =>
-            if (dateStr.nonEmpty) {
-              selectedDeadlineVar.set(
-                Some(new Date(dateStr))
-              )
-            } else {
-              selectedDeadlineVar.set(None)
+        div(
+          // date filter
+          idAttr := "filter-container",
+          input(
+            typ := "date",
+            onInput.mapToValue --> { dateStr =>
+              if (dateStr.nonEmpty) {
+                selectedDeadlineVar.set(
+                  Some(new Date(dateStr))
+                )
+              } else {
+                selectedDeadlineVar.set(None)
+              }
             }
-          }
-        ),
-
-        // Revisor Filter
-        select(
-          idAttr := "revisor",
-          option(
-            value := "",
-            selected := true,
-            hidden := true,
-            disabled := true,
-            "Choose revisor"
           ),
-          children <-- UserController.users.signal.map { users =>
-            users.map { user =>
-              option(value := user.id.getOrElse(0).toString, user.name)
+          // Revisor Filter
+          select(
+            idAttr := "revisor",
+            option(
+              value := "",
+              selected := true,
+              hidden := true,
+              disabled := true,
+              "Bearbeiter"
+            ),
+            children <-- UserController.users.signal.map { users =>
+              users.map { user =>
+                option(value := user.id.getOrElse(0).toString, user.name)
+              }
+            },
+            onChange.mapToValue --> { value =>
+              selectedRevisorIdVar.set(
+                value.toInt
+              )
             }
-          },
-          onChange.mapToValue --> { value =>
-            selectedRevisorIdVar.set(
-              value.toInt
-            )
-          }
+          )
         ),
 
         // kanban-board

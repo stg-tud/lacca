@@ -30,6 +30,32 @@ body {
   padding: 0 1rem;
 }
 
+/* Ensure filters are placed side by side with space from the left */
+#filter-container {
+  margin-top: 16px; /* Space between navbar and filters */
+  padding-left: 24px; /* Add space from the left side of the screen */
+  display: flex;
+  align-items: center; /* Align items properly */
+  gap: 16px; /* Space between filters */
+}
+
+#filter-container input,
+#filter-container select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#filter-container input {
+  width: 200px;
+}
+
+#filter-container select {
+  width: 180px;
+  cursor: pointer;
+}
+
 .kanban-column {
   background-color: #e9ecef;
   padding: 1rem;
