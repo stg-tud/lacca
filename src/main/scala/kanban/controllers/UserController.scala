@@ -96,17 +96,40 @@ object UserController {
       }
     }
 
-    // Handle user deletion
+    // Listen for user deletion messages
     if (data.startsWith("User with ID")) {
       val userIdStr = data.stripPrefix("User with ID ").split(" ")(0)
       try {
         val userId = userIdStr.toIntOption
         userId match {
           case Some(id) =>
-            // Remove user from the local list
-            val updatedUsers = users.now().filterNot(_.id.contains(id))
-            users.set(updatedUsers)
-            println(s"User with ID $id deleted locally")
+            // Check if the user is already deleted locally before attempting to remove again
+            val existingUsers = users.now()
+            val userToDelete = existingUsers.find(_.id.contains(id))
+
+            userToDelete match {
+              case Some(user) =>
+                // Remove user from the local list
+                val updatedUsers = existingUsers.filterNot(_.id.contains(id))
+                users.set(updatedUsers)
+                println(s"User with ID $id deleted locally")
+
+                // Send message to other peers about the user deletion
+                val message = s"User with ID $id deleted!"
+                TrysteroService.sendMessage(message)
+            
+                // Delete user from IndexedDB after propagating the message
+                UserService.deleteUser(Some(id)).onComplete {
+                  case Success(_) =>
+                    println(s"User with ID $id deleted from IndexedDB")
+                  case Failure(exception) =>
+                    println(s"Failed to delete user with ID $id from IndexedDB. Exception: $exception")
+                }
+
+              case None =>
+                println(s"User with ID $id not found locally, skipping deletion.")
+            }
+
           case None =>
             println(s"Invalid user ID received for deletion")
         }
