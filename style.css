@@ -16,6 +16,7 @@ body {
   color: #ffffff;
   text-decoration: none;
   font-weight: bold;
+  margin-right: 16px; /* Adjust spacing */
 }
 
 .nav-link:hover {
