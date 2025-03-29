@@ -2,18 +2,37 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f8f9fa;
+  background-color: #4682B4;
 }
 
 #nav-bar {
-  background-color: #343a40;
+  background-color: white;
   padding: 1rem;
   display: flex;
   justify-content: space-around;
 }
 
+/* Container for the whole navbar content */
+.nav-bar-container {
+  display: inline-block; /* Keep the text and links on the same row */
+  padding-left: 20px; /* Space between left edge and first element */
+}
+
+/* Style for Kanzleimanagement text */
+.kanzleimagement-text {
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 20px; /* Space between the text and the links */
+  display: inline-block; /* Keep it inline with links */
+}
+
+.separator {
+  margin-right: 20px; /* Space after the separator before the links */
+  font-size: 18px;
+}
+
 .nav-link {
-  color: #ffffff;
+  color: black;
   text-decoration: none;
   font-weight: bold;
   margin-right: 16px; /* Adjust spacing */
@@ -93,7 +112,7 @@ body {
   margin: 2rem auto;
   padding: 0.5rem 2rem;
   font-size: 1rem;
-  background-color: #007bff;
+  background-color: green;
   color: #ffffff;
   border: none;
   border-radius: 0.25rem;
@@ -101,7 +120,7 @@ body {
 }
 
 #add-project-button:hover {
-  background-color: #0056b3;
+  background-color: #3CB371;
 }
 
 #form-overlay {

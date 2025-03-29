@@ -9,6 +9,15 @@ object NavBar {
     div(
       idAttr := "nav-bar",
       div(
+        cls := "nav-bar-container",
+        div(
+          cls := "kanzleimagement-text",
+          "Kanzleimanagement"
+        ),
+        span(
+          cls := "separator",
+          "|"
+        ),
         List(
           "Kanzleiboard",
           "Kalkulationen",
