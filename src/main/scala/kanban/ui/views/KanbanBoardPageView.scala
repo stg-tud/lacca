@@ -50,15 +50,21 @@ object KanbanBoardPageView {
               disabled := true,
               "Bearbeiter"
             ),
+            option(
+              value := "0",  // Value for "All Revisors"
+              "Bearbeiter"  // Label for the "All Revisors" option
+            ),
             children <-- UserController.users.signal.map { users =>
               users.map { user =>
                 option(value := user.id.getOrElse(0).toString, user.name)
               }
             },
             onChange.mapToValue --> { value =>
-              selectedRevisorIdVar.set(
-                value.toInt
-              )
+              if (value == "0") {
+                selectedRevisorIdVar.set(0)  // Set to 0 for "All Revisors"
+              } else {
+                selectedRevisorIdVar.set(value.toInt)
+              }
             }
           )
         ),
