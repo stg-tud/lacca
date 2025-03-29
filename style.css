@@ -47,6 +47,7 @@ body {
   justify-content: space-around;
   margin-top: 2rem;
   padding: 0 1rem;
+  gap: 20px; /* Adjust the space between columns */
 }
 
 /* Ensure filters are placed side by side with space from the left */
