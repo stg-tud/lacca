@@ -34,8 +34,8 @@ object NavBar {
           )
         }
       ),
-      button(
-        idAttr := "show-account-sidebar-button",
+      a(
+        cls := "nav-link username-link", // Style it as a link
         child.text <-- GlobalState.usernameVar.signal, // Display the current username
         onClick --> { _ =>
           showSidebar.update(currentValue => !currentValue) // Toggle the sidebar visibility
