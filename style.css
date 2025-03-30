@@ -1,15 +1,22 @@
+/*Global variables*/
+:root {
+  --main-theme-color: #81C784;
+  --secondary-theme-color: #e9ecef;
+  --tertiary-theme-color: #388E3C;
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #4682B4;
 }
 
 #nav-bar {
-  background-color: white;
+  background-color: var(--main-theme-color);
   padding: 1rem;
   display: flex;
   justify-content: space-around;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Container for the whole navbar content */
@@ -34,7 +41,7 @@ body {
 .nav-link {
   color: black;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: regular;
   margin-right: 16px; /* Adjust spacing */
 }
 
@@ -77,7 +84,7 @@ body {
 }
 
 .kanban-column {
-  background-color: #e9ecef;
+  background-color: var(--secondary-theme-color);
   padding: 1rem;
   border-radius: 0.5rem;
   width: 18%;
@@ -113,7 +120,7 @@ body {
   margin: 2rem auto;
   padding: 0.5rem 2rem;
   font-size: 1rem;
-  background-color: green;
+  background-color: var(--tertiary-theme-color);
   color: #ffffff;
   border: none;
   border-radius: 0.25rem;
@@ -121,7 +128,7 @@ body {
 }
 
 #add-project-button:hover {
-  background-color: #3CB371;
+  filter: brightness(120%);
 }
 
 #form-overlay {
@@ -173,7 +180,7 @@ body {
 }
 
 #add-project-form button:first-child:hover {
-  background-color: #218838;
+  background-color: var(--primary-theme-color);
 }
 
 #add-project-form button:last-child {
@@ -194,7 +201,18 @@ body {
 }
 
 .project-details {
+  margin: 2rem auto;
+  background-color: var(--secondary-theme-color);
   position: relative;
+  justify-content: space-around;
+  padding: 1rem 1rem;
+  border-radius: 0.5rem;
+  max-width: 40rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.project-detail {
+  line-height:3;
 }
 
 .time-tracking-sidebar {
@@ -237,7 +255,7 @@ body {
   margin-top: 16px;
   align-self: flex-end;
   padding: 8px 16px;
-  background-color: #007bff;
+  background-color: var(--tertiary-theme-color);
   color: white;
   border: none;
   border-radius: 4px;

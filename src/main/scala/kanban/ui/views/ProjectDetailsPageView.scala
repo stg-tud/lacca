@@ -30,8 +30,10 @@ object ProjectDetailsPageView {
     val editedDeadlineVar = Var[Option[Date]](None)
 
     div(
-      cls := "project-details",
       NavBar(),
+      div(
+        idAttr := "project-detail-container",
+
       child <-- projectDetailsPageSignal.combineWith(ProjectController.projects.signal).map {
         case (ProjectDetailsPage(projectId), projects) =>
           val project = projects.find(_.id == projectId).get
@@ -41,6 +43,7 @@ object ProjectDetailsPageView {
           editedDeadlineVar.set(project.deadline)
 
           div(
+            cls := "project-details",
             h2(s"Project: ${project.name}"),
 
             // Editable status dropdown
@@ -152,7 +155,7 @@ object ProjectDetailsPageView {
             ),
           )
       }
-    )
+    ))
   }
 
   // Function to render the time tracking form

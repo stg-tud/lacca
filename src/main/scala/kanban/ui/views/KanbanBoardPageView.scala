@@ -101,7 +101,7 @@ object KanbanBoardPageView {
         ),
         button(
           idAttr := "add-project-button",
-          "projekt hinzufügen",
+          "Projekt hinzufügen",
           onClick --> { e =>
             {
               toggleDisplay.update(t => "")
