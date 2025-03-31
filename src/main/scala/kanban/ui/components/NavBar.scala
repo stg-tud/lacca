@@ -18,8 +18,12 @@ object NavBar {
           cls := "separator",
           "|"
         ),
+        a(
+          cls := "nav-link",
+          href := "#/kanbanboard",
+          "Kanzleiboard"
+        ),
         List(
-          "Kanzleiboard",
           "Kalkulationen",
           "Angebote",
           "Rechnungen",
