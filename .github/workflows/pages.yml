@@ -56,7 +56,7 @@ jobs:
       - name: Install npm deps
         run: npm install
       - name: Build with vite
-        run: npm run build
+        run: npm run deploy
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
