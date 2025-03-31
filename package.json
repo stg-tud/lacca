@@ -12,11 +12,19 @@
     "@scala-js/vite-plugin-scalajs": "^1.0.0",
     "@types/bcryptjs": "^2.4.6",
     "typescript": "^4.9.5",
-    "vite": "^6.2.0"
+    "vite": "^6.2.3"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "dexie": "^4.0.10",
     "trystero": "^0.21.0-beta.1"
+  },
+  "overrides": {
+    "@scala-js/vite-plugin-scalajs": {
+      "typescript": "$vite"
+    },
+    "trystero" : {
+      "@babel/runtime": ">=7.26.10"
+    }
   }
 }

@@ -46,9 +46,9 @@ jobs:
           distribution: 'temurin'
           cache: 'sbt'
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3.6.0
+        uses: actions/setup-node@v4
         with:
-          # node-version: # optional
+          node-version: latest
           cache: npm
       - name: Install npm deps
         run: npm install
