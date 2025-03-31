@@ -57,6 +57,8 @@ jobs:
         run: npm install
       - name: Build with vite
         run: npm run deploy
+        env:
+          URL: ${{ steps.deployment.outputs.page_url }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
