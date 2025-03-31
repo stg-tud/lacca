@@ -50,6 +50,8 @@ jobs:
         with:
           # node-version: # optional
           cache: npm
+      - name: Install npm deps
+        run: npm install
       - name: Build with vite
         run: npm run build
       - name: Upload artifact
