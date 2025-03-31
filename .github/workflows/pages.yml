@@ -40,11 +40,14 @@ jobs:
             ~/.cache/scalablytyped
             ~/.ivy2/local/org.scalablytyped
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version-file: .github/workflows/.java-version
+          java-version: 23
           distribution: 'temurin'
           cache: 'sbt'
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
