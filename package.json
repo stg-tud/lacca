@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "deploy": "vite build --base=$URL",
+    "deploy": "vite build --base=$BASE_PATH",
     "preview": "vite preview"
   },
   "devDependencies": {

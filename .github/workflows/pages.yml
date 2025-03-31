@@ -58,7 +58,7 @@ jobs:
       - name: Build with vite
         run: npm run deploy
         env:
-          URL: ${{ steps.deployment.outputs.page_url }}
+          BASE_PATH: "/lacca"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
