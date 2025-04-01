@@ -20,7 +20,7 @@ object NavBar {
         ),
         a(
           cls := "nav-link",
-          href := "#/kanbanboard",
+          href := Router.relativeUrlForPage(KanbanBoardPage),
           "Kanzleiboard"
         ),
         List(

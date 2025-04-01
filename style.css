@@ -38,6 +38,10 @@ body {
   font-size: 18px;
 }
 
+.username-link:hover {
+  cursor: pointer;
+}
+
 .nav-link {
   color: black;
   text-decoration: none;

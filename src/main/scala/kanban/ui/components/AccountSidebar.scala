@@ -3,8 +3,8 @@ package kanban.ui.components
 import com.raquo.laminar.api.L.{*, given}
 import kanban.routing.Pages.{AccountOverviewPage, LoginPage}
 import kanban.routing.Router
-import kanban.ui.views.GlobalState // Import global username
-import kanban.service.UserService.*
+import kanban.ui.views.GlobalState
+
 import scala.scalajs.js
 
 object AccountSidebar {
@@ -35,23 +35,19 @@ object AccountSidebar {
         ul(
           li(
             a(
-              href := "#",
+              href := Router.relativeUrlForPage(AccountOverviewPage),
               "Kontoübersicht",
-              onClick --> { _ =>
-                // Navigate to the Account Overview page when clicked
-                Router.pushState(AccountOverviewPage)
-              },
             )
           ),
           li(
             a(
-              href := "#",
+              href := Router.relativeUrlForPage(LoginPage),
               onClick --> { _ =>
                 // Log out by clearing global username and localStorage, then redirect to LoginPage
                 GlobalState.usernameVar.set("Guest")
                 js.Dynamic.global.localStorage.removeItem("username") // Remove username from localStorage
                 // Redirect to the Login page when clicked
-                Router.pushState(LoginPage)
+                println("Logged out")
               },
               "Abmelden"
             )
