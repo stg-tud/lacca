@@ -1,6 +1,7 @@
 package kanban.service
 
-import org.scalajs.dom.{RTCConfiguration, RTCIceServer}
+import com.raquo.laminar.api.L.{*, given}
+import org.scalajs.dom.{RTCConfiguration, RTCIceServer, RTCPeerConnection}
 import typings.trystero.mod.*
 
 import scala.scalajs.js
@@ -26,6 +27,8 @@ object TrysteroService {
   }
 
   val room = joinRoom(DefaultConfig, "testroom")
+  val peerList: Var[List[(String, RTCPeerConnection)]] = Var(List.empty)
+  val userId: Var[String] = Var(selfId)
 
   // setup actions
   private val actions: js.Tuple3[ActionSender[String], ActionReceiver[
@@ -36,7 +39,13 @@ object TrysteroService {
 
   // listen for incoming messages
   println(s"my peer ID is $selfId")
-  room.onPeerJoin(peerId => println(s"$peerId joined"))
-  room.onPeerLeave(peerId => println(s"$peerId left"))
+  room.onPeerJoin(peerId =>
+    println(s"$peerId joined")
+    peerList.set(room.getPeers().toList)
+  )
+  room.onPeerLeave(peerId =>
+    println(s"$peerId left")
+    peerList.set(room.getPeers().toList)
+  )
   receiveMessage((data, peerId, metaData) => println(s"got $data from $peerId"))
 }

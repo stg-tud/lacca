@@ -1,6 +1,8 @@
 package kanban.ui.components
 
 import com.raquo.laminar.api.L.{*, given}
+import kanban.routing.Pages.KanbanBoardPage
+import kanban.routing.Router
 import kanban.ui.views.GlobalState // Import global username
 
 object NavBar {
@@ -38,11 +40,14 @@ object NavBar {
           )
         }
       ),
+      UserCounter(),
       a(
         cls := "nav-link username-link", // Style it as a link
         child.text <-- GlobalState.usernameVar.signal, // Display the current username
         onClick --> { _ =>
-          showSidebar.update(currentValue => !currentValue) // Toggle the sidebar visibility
+          showSidebar.update(currentValue =>
+            !currentValue
+          ) // Toggle the sidebar visibility
         }
       ),
       AccountSidebar(showSidebar)
