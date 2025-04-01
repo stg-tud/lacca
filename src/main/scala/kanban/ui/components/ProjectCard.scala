@@ -16,7 +16,7 @@ object ProjectCard {
   ): HtmlElement = {
     div(
       className := "kanban-card",
-      text <-- projectSignal.map(_.name),
+      text <-- projectSignal.map(_.name.read),
       br(),
       button(
         className := "delete-project-button",
@@ -24,11 +24,11 @@ object ProjectCard {
         onClick --> { _ => projectEventBus.emit(Deleted(projectId)) }
       ),
       br(),
-      text <-- projectSignal.map(p => formatDate(p.deadline)),
+      text <-- projectSignal.map(p => formatDate(p.deadline.read)),
       br(),
-      text <-- projectSignal.map(_.revisorId.getOrElse(0).toString),
-      dataAttr("project-id") <-- projectSignal.map(_.id.get.toString),
-      dataAttr("name") <-- projectSignal.map(_.name),
+      text <-- projectSignal.map(_.revisorId.toString),
+      dataAttr("project-id") <-- projectSignal.map(_.id.toString),
+      dataAttr("name") <-- projectSignal.map(_.name.read),
       dataAttr("x") := "0",
       dataAttr("y") := "0",
 

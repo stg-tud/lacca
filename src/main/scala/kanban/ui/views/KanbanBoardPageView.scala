@@ -89,10 +89,11 @@ object KanbanBoardPageView {
                     {
                       projectsList.filter(p =>
                         (p.status.toString == status) &&
-                          (selectedRevisorId == 0 || p.revisorId
-                            .contains(selectedRevisorId)) &&
-                          (selectedDeadline.isEmpty || p.deadline
-                            .contains(selectedDeadline.get))
+                        // TODO: Fix this filter
+                          (selectedRevisorId == 0 || 
+                            p.revisorId.toString == selectedRevisorId.toString) &&
+                          (selectedDeadline.isEmpty || 
+                            p.deadline == selectedDeadline.get)
                       )
                     }
                 }
