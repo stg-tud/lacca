@@ -8,7 +8,6 @@ val base = "/lacca/#"
 
 val routes = List(
   Route.static(KanbanBoardPage, root / endOfSegments, basePath=base),
-  Route.static(KanbanBoardPage, root / "kanbanboard" / endOfSegments, basePath=base),
   Route.static(LoginPage, root / "login" / endOfSegments, basePath=base),
   Route[ProjectDetailsPage, String](
     encode =
