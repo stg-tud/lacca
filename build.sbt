@@ -8,7 +8,7 @@ lazy val kanban = project
   ) // Enable the Scala.js plugin in this project
   .settings(
     name := "kanban",
-    scalaVersion := "3.5.0",
+    scalaVersion := "3.6.4",
     // Tell Scala.js that this is an application with a main method
     scalaJSUseMainModuleInitializer := true,
     externalNpm := baseDirectory.value,
