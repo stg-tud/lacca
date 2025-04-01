@@ -7,6 +7,7 @@ object DexieDB {
     val dexieDB: Dexie = new Dexie.^("kanban")
     dexieDB.version(1).stores(
         StringDictionary(
+            ("projectcrdts", "id"),
             ("projects", "++id"),
             ("users", "++id")
         )

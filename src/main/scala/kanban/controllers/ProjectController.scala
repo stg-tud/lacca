@@ -39,42 +39,42 @@ object ProjectController {
       println("create project event received")
       createProject(project).onComplete {
         case Success(_) =>
-          println(s"Project with id: ${project.id.get} added successfully!")
+          println(s"Project with id: ${project.id.toString} added successfully!")
         case Failure(exception) =>
           println(
-            s"Failed to add project with id: ${project.id.get}. Exception: $exception"
+            s"Failed to add project with id: ${project.id.toString}. Exception: $exception"
           )
       }
     case ProjectEvent.Deleted(id) =>
       println("delete project event received")
       deleteProject(id).onComplete {
         case Success(_) =>
-          println(s"Project with id: ${id.get} deleted successfully!")
+          println(s"Project with id: ${id.toString} deleted successfully!")
         case Failure(exception) =>
           println(
-            s"Failed to delete project with id: ${id.get}. Exception: $exception"
+            s"Failed to delete project with id: ${id.toString}. Exception: $exception"
           )
       }
     case ProjectEvent.Updated(id, updatedProject) =>
       println("update project event received")
       updateProject(id, updatedProject).onComplete {
         case Success(_) =>
-          println(s"Project with id: ${id.get} updated successfully!")
+          println(s"Project with id: ${id.toString} updated successfully!")
         case Failure(exception) =>
           println(
-            s"Failed to update project with id: ${id.get}. Exception: $exception"
+            s"Failed to update project with id: ${id.toString}. Exception: $exception"
           )
       }
     case ProjectEvent.StatusModified(id, newStatus) =>
       println(
-        s"Status modification event received for project with id: ${id.get}"
+        s"Status modification event received for project with id: ${id.toString}"
       )
       updateProjectStatusById(id, newStatus).onComplete {
         case Success(_) =>
-          println(s"Project with id: ${id.get} status updated successfully!")
+          println(s"Project with id: ${id.toString} status updated successfully!")
         case Failure(exception) =>
           println(
-            s"Failed to update project with id: ${id.get} status. Exception: $exception"
+            s"Failed to update project with id: ${id.toString} status. Exception: $exception"
           )
       }
 

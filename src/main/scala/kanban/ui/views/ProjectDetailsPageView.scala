@@ -13,9 +13,11 @@ import scala.util.{Failure, Success}
 import kanban.ui.components.NavBar
 import kanban.domain.models.ProjectStatus
 import kanban.domain.models.Project
-import kanban.routing.Pages.{ProjectDetailsPage, KanbanBoardPage}
+import kanban.routing.Pages.{KanbanBoardPage, ProjectDetailsPage}
 import kanban.domain.events.ProjectEvent.Updated
 import kanban.routing.Router
+import rdts.datatypes.LastWriterWins
+import rdts.time.CausalTime
 
 object ProjectDetailsPageView {
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
@@ -259,7 +261,13 @@ object ProjectDetailsPageView {
             val addedTime = calculateDuration(startTimeVar.now(), endTimeVar.now())
             // Update the project list reactively
             val updatedProject =
-              project.copy(timeTracked = project.timeTracked + addedTime)
+              project.copy(
+                timeTracked = LastWriterWins(
+                  CausalTime.now(),
+                  project.timeTracked.read + addedTime
+                )
+              )
+              //project.copy(timeTracked = project.timeTracked + addedTime)
 
             // Close the sidebar
             isTimeTrackingSidebarVisible.set(false)
