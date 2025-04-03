@@ -9,9 +9,8 @@ object Router
     extends waypoint.Router[Page](
       routes = routes,
       getPageTitle = _.title,
-      serializePage = page =>  page.toJson,
-      deserializePage = pageStr =>
-        NativeConverter[Page].fromJson(pageStr),
+      serializePage = page => page.toJson,
+      deserializePage = pageStr => NativeConverter[Page].fromJson(pageStr),
       routeFallback = _ => Pages.KanbanBoardPage
     )(
       popStateEvents = windowEvents(

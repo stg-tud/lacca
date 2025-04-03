@@ -8,8 +8,10 @@ import kanban.routing.Pages.ProjectDetailsPage
 import kanban.routing.Router
 import kanban.service.ProjectService.*
 import kanban.service.{ProjectService, TrysteroService}
+import rdts.base.Lattice
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 object ProjectController {
@@ -17,11 +19,34 @@ object ProjectController {
 
   val projectEventBus: EventBus[ProjectEvent] = new EventBus[ProjectEvent]
 
+  // Synchronization
   // send all projects when a new device joins
   TrysteroService.room.onPeerJoin(peerId =>
-    projects.now().foreach(project =>
-      TrysteroService.sendProjectUpdate(project, List(peerId))
-    )
+    projects
+      .now()
+      .foreach(project =>
+        TrysteroService.sendProjectUpdate(project, List(peerId))
+      )
+  )
+
+  // listen for updates from other peers
+  TrysteroService.receiveProjectUpdate((newProject: Project) =>
+    val projectId = newProject.id
+    val oldProject: Future[Project] = ProjectService.getProjectById(projectId)
+    val oldPlusMerged = oldProject.map { old => // old value and merged value
+      (old, Lattice[Project].merge(old, newProject))
+    }
+    oldPlusMerged.onComplete {
+      case Success((old, m)) =>
+        if old <= m then
+          ProjectService
+            .updateProject(projectId, m) // check if merge inflates
+      case Failure(_) =>
+        ProjectService.updateProject(
+          projectId,
+          newProject
+        ) // just apply remote update
+    }
   )
 
   projectsObservable.subscribe(
@@ -67,13 +92,18 @@ object ProjectController {
       println(
         s"Status modification event received for project with id: ${id.toString}"
       )
-      getProjectById(id).onComplete{
-        case Success(p) => TrysteroService.sendProjectUpdate(p.copy(status=p.status.write(newStatus)))
+      getProjectById(id).onComplete {
+        case Success(p) =>
+          TrysteroService.sendProjectUpdate(
+            p.copy(status = p.status.write(newStatus))
+          )
         case Failure(exception) => throw exception
       }
       updateProjectStatusById(id, newStatus).onComplete {
         case Success(_) =>
-          println(s"Project with id: ${id.toString} status updated successfully!")
+          println(
+            s"Project with id: ${id.toString} status updated successfully!"
+          )
         case Failure(exception) =>
           println(
             s"Failed to update project with id: ${id.toString} status. Exception: $exception"

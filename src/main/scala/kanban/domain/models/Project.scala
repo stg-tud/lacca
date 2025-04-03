@@ -5,7 +5,6 @@ import rdts.base.{Lattice, LocalUid, Uid}
 import rdts.datatypes.{GrowOnlyCounter, LastWriterWins}
 import rdts.time.CausalTime
 
-import java.nio.charset.StandardCharsets
 import scala.scalajs.js
 import scala.scalajs.js.Date
 
@@ -39,11 +38,11 @@ object Project {
     )
   }
 
+  // JSON conversion
   given NativeConverter[LocalUid] with {
     extension (a: LocalUid)
       override def toNative: js.Any =
         NativeConverter[Uid].toNative(a.uid)
-
     override def fromNative(ps: ParseState): LocalUid =
       LocalUid(NativeConverter[Uid].fromNative(ps))
   }
@@ -51,7 +50,6 @@ object Project {
     extension (a: ProjectId)
       override def toNative: js.Any =
         a.delegate
-
     override def fromNative(ps: ParseState): ProjectId =
       Uid.predefined(ps.json.asInstanceOf[String])
   }
@@ -61,7 +59,6 @@ object Project {
         NativeConverter[Map[String, Int]].toNative(
           a.map((k, v) => (k.delegate, v))
         )
-
     override def fromNative(ps: ParseState): Map[ProjectId, Int] =
       NativeConverter[Map[String, Int]]
         .fromNative(ps.json)
@@ -69,40 +66,7 @@ object Project {
   }
   given NativeConverter[GrowOnlyCounter] = NativeConverter.derived
 
+  // CRDT lattices
   given Lattice[ProjectId] = Lattice.assertEquals
   given Lattice[Project] = Lattice.derived
-}
-
-trait NameLWW extends js.Object {
-  val timestamp: String
-  val payload: String
-}
-
-trait StatusLWW extends js.Object {
-  val timestamp: String
-  val payload: String
-}
-
-trait RevisorIdLWW extends js.Object {
-  val timestamp: String
-  val payload: String
-}
-
-trait DeadlineLWW extends js.Object {
-  val timestamp: String
-  val payload: js.UndefOr[Date]
-}
-
-trait TimeTrackedLWW extends js.Object {
-  val timestamp: String
-  val payload: Double
-}
-
-trait ProjectJsObject extends js.Object {
-  val id: String
-  val name: NameLWW
-  val status: StatusLWW
-  val revisorId: RevisorIdLWW
-  val deadline: DeadlineLWW
-  val timeTracked: TimeTrackedLWW
 }

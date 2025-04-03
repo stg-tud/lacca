@@ -1,13 +1,12 @@
 package kanban.controllers
 import com.raquo.airstream.state.Var
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import kanban.persistence.DexieDB.dexieDB
 import kanban.domain.models.Project.given
+import kanban.persistence.DexieDB.dexieDB
 import org.getshaka.nativeconverter.NativeConverter
 import rdts.base.LocalUid
-import typings.dexie.mod.{Dexie, Table, UpdateSpec, liveQuery}
+import typings.dexie.mod.Table
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.util.{Failure, Success}
 
@@ -23,7 +22,8 @@ object Replica {
 
   replicaIdTable
     .get(0)
-    .toFuture.map(_.toOption)
+    .toFuture
+    .map(_.toOption)
     .onComplete {
       case Failure(f) => println(f)
       case Success(Some(value)) =>

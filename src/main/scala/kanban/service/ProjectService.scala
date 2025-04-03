@@ -1,24 +1,16 @@
 package kanban.service
 
-import kanban.domain.models.{Project, ProjectId, ProjectJsObject, ProjectStatus}
+import kanban.domain.models.{Project, ProjectId, ProjectStatus}
 import kanban.persistence.DexieDB.dexieDB
 import org.getshaka.nativeconverter.NativeConverter
-import org.scalablytyped.runtime.StringDictionary
-import rdts.base.Uid
 import rdts.datatypes.LastWriterWins
-import rdts.time.CausalTime
-import typings.dexie.mod.{Dexie, Table, UpdateSpec, liveQuery}
-// import typings.dexieObservable.{liveQuery, LiveQueryResult}
-
-import kanban.service.UserService.getAllUsers
-import typings.std.stdStrings.live
+import typings.dexie.mod.{Table, liveQuery}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.Date
-import scala.scalajs.js.JSConverters.JSRichOption
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 object ProjectService {
   private val projectsTable: Table[js.Any, String, js.Any] =
