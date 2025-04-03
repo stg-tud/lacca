@@ -9,7 +9,6 @@ object DexieDB {
     .version(1.1)
     .stores(
       StringDictionary(
-        ("projectcrdts", "id"),
         ("projects", "id"),
         ("users", "++id"),
         ("replicas", "slot")
