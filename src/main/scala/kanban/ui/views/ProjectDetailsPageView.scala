@@ -2,22 +2,20 @@ package kanban.ui.views
 
 import com.raquo.laminar.api.L.*
 import kanban.controllers.ProjectController.projectEventBus
-import kanban.controllers.{ProjectController, UserController}
+import kanban.controllers.{ProjectController, Replica, UserController}
+import kanban.domain.events.ProjectEvent.Updated
 import kanban.domain.models.User.*
-import kanban.domain.models.{User, UserId}
+import kanban.domain.models.{Project, ProjectStatus, User, UserId}
+import kanban.routing.Pages.{KanbanBoardPage, ProjectDetailsPage}
+import kanban.routing.Router
 import kanban.service.UserService.*
+import kanban.ui.components.NavBar
+import rdts.datatypes.LastWriterWins
+import rdts.time.CausalTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
 import scala.util.{Failure, Success}
-import kanban.ui.components.NavBar
-import kanban.domain.models.ProjectStatus
-import kanban.domain.models.Project
-import kanban.routing.Pages.{KanbanBoardPage, ProjectDetailsPage}
-import kanban.domain.events.ProjectEvent.Updated
-import kanban.routing.Router
-import rdts.datatypes.LastWriterWins
-import rdts.time.CausalTime
 
 object ProjectDetailsPageView {
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
@@ -28,7 +26,7 @@ object ProjectDetailsPageView {
     val isTimeTrackingSidebarVisible = Var(false)
     val timeInFormVar = Var(0.0)
     val editedStatusVar = Var("")
-    val editedRevisorIdVar: Var[UserId] = Var(Option.empty[Int])
+    val editedRevisorIdVar: Var[UserId] = Var(None)
     val editedDeadlineVar = Var[Option[Date]](None)
 
     div(
@@ -41,8 +39,8 @@ object ProjectDetailsPageView {
           val project = projects.find(_.id == projectId).get
 
           editedStatusVar.set(project.status.toString)
-          editedRevisorIdVar.set(project.revisorId)
-          editedDeadlineVar.set(project.deadline)
+//          editedRevisorIdVar.set(project.revisorId.value)
+          editedDeadlineVar.set(project.deadline.value)
 
           div(
             cls := "project-details",
@@ -75,7 +73,7 @@ object ProjectDetailsPageView {
                       option(
                         value := user.id.getOrElse(0).toString,
                         user.name,
-                        selected := (user.id == project.revisorId)
+//                        selected := (user.id == project.revisorId)
                       )
                   }
                 },
@@ -98,7 +96,7 @@ object ProjectDetailsPageView {
               input(
                 typ := "date",
                 value := project.deadline
-                  .map(_.toISOString().slice(0, 10))
+                  .value.map(_.toISOString().slice(0, 10))
                   .getOrElse(""), // Format date as "YYYY-MM-DD"
                 onInput.mapToValue --> { dateStr =>
                   if (dateStr.nonEmpty) {
@@ -116,7 +114,7 @@ object ProjectDetailsPageView {
               span(cls := "project-detail-label", "Gesamte erfasste Zeit: "),
               span(
                 child.text <-- Var(project.timeTracked).signal.map(timeInMinutes =>
-                  formatTime(timeInMinutes)
+                  formatTime(timeInMinutes.value)
                 )
               )
             ),
@@ -147,9 +145,9 @@ object ProjectDetailsPageView {
 
               onClick --> {_ =>
                 val updatedProject = project.copy(
-                    status = ProjectStatus.valueOf(editedStatusVar.now()),
-                    revisorId = editedRevisorIdVar.now(),
-                    deadline = editedDeadlineVar.now()
+                    status = project.status.write(ProjectStatus.valueOf(editedStatusVar.now())),
+                    revisorId = project.revisorId.write(editedRevisorIdVar.now()),
+                    deadline = project.deadline.write(editedDeadlineVar.now())
                 )
                 projectEventBus.emit(Updated(project.id, updatedProject))
                 Router.pushState(KanbanBoardPage)
@@ -258,21 +256,19 @@ object ProjectDetailsPageView {
           "Speichern",
           disabled <-- formValidVar.signal.map(!_),
           onClick --> { _ =>
-            val addedTime = calculateDuration(startTimeVar.now(), endTimeVar.now())
             // Update the project list reactively
-            val updatedProject =
-              project.copy(
-                timeTracked = LastWriterWins(
-                  CausalTime.now(),
-                  project.timeTracked.read + addedTime
-                )
-              )
-              //project.copy(timeTracked = project.timeTracked + addedTime)
-
-            // Close the sidebar
-            isTimeTrackingSidebarVisible.set(false)
-
-            projectEventBus.emit(Updated(project.id, updatedProject))
+            Replica.id.now() match // check if the replicaId is known
+              case Some(repId) =>
+                val addedTime = calculateDuration(startTimeVar.now(), endTimeVar.now())
+                val updatedProject =
+                  project.copy(
+                    timeTracked = project.timeTracked.add(addedTime)(using repId)
+                  )
+                //project.copy(timeTracked = project.timeTracked + addedTime)
+                // Close the sidebar
+                isTimeTrackingSidebarVisible.set(false)
+                projectEventBus.emit(Updated(project.id, updatedProject))
+              case None => println("Replica Id not set!")
           }
         )
       )
@@ -280,7 +276,7 @@ object ProjectDetailsPageView {
   }
 
   // Helper function to calculate duration (in minutes) between two times
-  private def calculateDuration(startTime: String, endTime: String): Double = {
+  private def calculateDuration(startTime: String, endTime: String): Int = {
     val startParts = startTime.split(":").map(_.toInt)
     val endParts = endTime.split(":").map(_.toInt)
 

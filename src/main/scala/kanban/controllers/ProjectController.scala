@@ -17,15 +17,18 @@ object ProjectController {
 
   val projectEventBus: EventBus[ProjectEvent] = new EventBus[ProjectEvent]
 
+  // send all projects when a new device joins
+  TrysteroService.room.onPeerJoin(peerId =>
+    projects.now().foreach(project =>
+      TrysteroService.sendProjectUpdate(project, List(peerId))
+    )
+  )
+
   projectsObservable.subscribe(
     next = (queryResultFuture) =>
       queryResultFuture.onComplete {
         case Success(projectsSeq) => {
           projects.set(projectsSeq.toList)
-          println(s"Projects changed: ${projectsSeq.toList}")
-          TrysteroService.sendMessage(
-            s"Projects changed: ${projectsSeq.toList}"
-          )
         }
         case Failure(exception) =>
           println(s"Error observing projects: $exception")
@@ -36,15 +39,9 @@ object ProjectController {
 
   projectEventBus.events.foreach {
     case ProjectEvent.Added(project) =>
-      println("create project event received")
-      createProject(project).onComplete {
-        case Success(_) =>
-          println(s"Project with id: ${project.id.toString} added successfully!")
-        case Failure(exception) =>
-          println(
-            s"Failed to add project with id: ${project.id.toString}. Exception: $exception"
-          )
-      }
+      println(s"create project event received for $project")
+      createProject(project)
+      TrysteroService.sendProjectUpdate(project)
     case ProjectEvent.Deleted(id) =>
       println("delete project event received")
       deleteProject(id).onComplete {
@@ -57,6 +54,7 @@ object ProjectController {
       }
     case ProjectEvent.Updated(id, updatedProject) =>
       println("update project event received")
+      TrysteroService.sendProjectUpdate(updatedProject)
       updateProject(id, updatedProject).onComplete {
         case Success(_) =>
           println(s"Project with id: ${id.toString} updated successfully!")
@@ -69,6 +67,10 @@ object ProjectController {
       println(
         s"Status modification event received for project with id: ${id.toString}"
       )
+      getProjectById(id).onComplete{
+        case Success(p) => TrysteroService.sendProjectUpdate(p.copy(status=p.status.write(newStatus)))
+        case Failure(exception) => throw exception
+      }
       updateProjectStatusById(id, newStatus).onComplete {
         case Success(_) =>
           println(s"Project with id: ${id.toString} status updated successfully!")

@@ -34,11 +34,9 @@ lazy val kanban = project
      */
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "2.8.0",
-      "com.lihaoyi" %%% "scalatags" % "0.11.1",
       "com.raquo" %%% "laminar" % "17.0.0",
       "com.raquo" %%% "waypoint" % "8.0.1",
-      "io.bullet" %%% "borer-core" % "1.14.1",
-      "io.bullet" %%% "borer-derivation" % "1.14.1",
-      "de.tu-darmstadt.stg" %%% "rdts" % "0.37.0"
+      "de.tu-darmstadt.stg" %%% "rdts" % "0.37.0",
+      "org.getshaka" %%% "native-converter" % "0.9.0"
     )
   )

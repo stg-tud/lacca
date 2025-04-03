@@ -111,8 +111,7 @@ object AddProjectFormView {
                           Project(
                             name = projectName.now(), 
                             status = ProjectStatus.valueOf(projectStatus.now()),
-                            //TODO: use revisorId from the select
-                            revisorId = Uid.gen(),
+                            revisorId = projectRevisorId.now(),
                             deadline = projectDeadline.now()
                           )))
                     }

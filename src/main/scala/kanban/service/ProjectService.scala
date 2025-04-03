@@ -2,74 +2,65 @@ package kanban.service
 
 import kanban.domain.models.{Project, ProjectId, ProjectJsObject, ProjectStatus}
 import kanban.persistence.DexieDB.dexieDB
+import org.getshaka.nativeconverter.NativeConverter
 import org.scalablytyped.runtime.StringDictionary
 import rdts.base.Uid
 import rdts.datatypes.LastWriterWins
 import rdts.time.CausalTime
 import typings.dexie.mod.{Dexie, Table, UpdateSpec, liveQuery}
-import kanban.domain.models.Project.fromJsObject
 // import typings.dexieObservable.{liveQuery, LiveQueryResult}
 
-import scala.scalajs.js.JSConverters.JSRichOption
+import kanban.service.UserService.getAllUsers
+import typings.std.stdStrings.live
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.Date
+import scala.scalajs.js.JSConverters.JSRichOption
 import scala.util.{Failure, Success}
-import typings.std.stdStrings.live
-import kanban.service.UserService.getAllUsers
 
 object ProjectService {
-  private val projectsTable: Table[ProjectJsObject, String, ProjectJsObject] =
+  private val projectsTable: Table[js.Any, String, js.Any] =
     dexieDB.table("projects")
 
   val projectsObservable = liveQuery(() => getAllProjects())
 
   def createProject(project: Project): Future[Any] = {
     println(s"createProject called!!")
-    projectsTable.add(Project.toJsObject(project)).toFuture
+    projectsTable.put(project.toNative).toFuture
   }
 
   def getAllProjects(): Future[Seq[Project]] = {
     println(s"getAllProjects called!!")
     projectsTable.toArray().toFuture.map { projectsJsArray =>
-      projectsJsArray.map(Project.fromJsObject(_)).toSeq
+      projectsJsArray
+        .map(entry => NativeConverter[Project].fromNative(entry))
+        .toSeq
     }
   }
 
   def getProjectById(projectId: ProjectId): Future[Project] = {
-    projectsTable.get(projectId.toString).toFuture.map { projectJsObject =>
+    projectsTable.get(projectId.delegate).toFuture.map { projectJsObject =>
       if (projectJsObject.isEmpty) {
-        return Future.failed(new Exception("Project not found!!"))
+        throw new Exception(s"Project ${projectId.show} not found!!")
       } else {
-        fromJsObject(projectJsObject.get)
+        NativeConverter[Project].fromNative(projectJsObject.get)
       }
     }
   }
-  
+
   def deleteProject(projectId: ProjectId): Future[Unit] = {
     projectsTable
       .delete(projectId.toString)
       .toFuture
   }
 
-  def updateProject(projectId: ProjectId, project: Project): Future[Unit] = {
+  def updateProject(projectId: ProjectId, project: Project): Future[String] = {
     println(s"updateProject called!!")
     projectsTable
-      .update(
-        projectId.toString,
-        Project.toJsObject(project).asInstanceOf[UpdateSpec[ProjectJsObject]]
-//        js.Dynamic
-//          .literal(
-//            "name" -> project.name,
-//            "status" -> project.status.toString,
-//            "revisorId" -> project.revisorId.orUndefined,
-//            "deadline" -> project.deadline.orUndefined
-//          )
-//          .asInstanceOf[UpdateSpec[ProjectJsObject]]
-      )
+      .put(project.toNative)
       .toFuture
-      .map(_ => ())
   }
 
   def updateProjectStatusById(
@@ -77,16 +68,21 @@ object ProjectService {
       status: ProjectStatus
   ): Future[Unit] = {
     println(s"updateProjectStatusById service method called!!")
-    projectsTable
-      .update(
-        projectId.toString,
-        js.Dynamic
-          .literal(
-            "status" -> status.toString
-          )
-          .asInstanceOf[UpdateSpec[ProjectJsObject]]
-      )
-      .toFuture
-      .map(_ => ())
+    val project =
+      projectsTable.get(projectId.delegate).toFuture.map { projectJsObject =>
+        if (projectJsObject.isEmpty) {
+          throw (new Exception("Project not found!!"))
+        } else {
+          NativeConverter[Project].fromNative(projectJsObject.get)
+        }
+      }
+    println(s"id: $projectId, new status: ${status.toString}")
+    project.onComplete {
+      case Success(p) => println(s"modified project: ${p.toString}")
+      case _          => println("failed to fetch project")
+    }
+    project.map(p =>
+      updateProject(p.id, p.copy(status = p.status.write(status)))
+    )
   }
 }

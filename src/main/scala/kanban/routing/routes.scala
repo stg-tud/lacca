@@ -12,7 +12,7 @@ val routes = List(
   Route.static(LoginPage, root / "login" / endOfSegments, basePath=base),
   Route[ProjectDetailsPage, String](
     encode =
-      projectDetailsPage => projectDetailsPage.toString(),
+      projectDetailsPage => projectDetailsPage.id.delegate,
     decode = arg => ProjectDetailsPage(id = Uid.predefined(arg)),
     pattern = root / "projectDetails" / segment[String] / endOfSegments, basePath=base
   ),
