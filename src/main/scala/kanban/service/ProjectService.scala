@@ -44,7 +44,7 @@ object ProjectService {
 
   def deleteProject(projectId: ProjectId): Future[Unit] = {
     projectsTable
-      .delete(projectId.toString)
+      .delete(projectId.delegate)
       .toFuture
   }
 
