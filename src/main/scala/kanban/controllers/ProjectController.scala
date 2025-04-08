@@ -7,7 +7,9 @@ import kanban.domain.models.{Project, ProjectStatus}
 import kanban.routing.Pages.ProjectDetailsPage
 import kanban.routing.Router
 import kanban.service.ProjectService.*
-import kanban.service.{ProjectService, TrysteroService}
+import kanban.service.ProjectService
+import kanban.sync.ProjectSync.{receiveProjectUpdate, sendProjectUpdate}
+import kanban.sync.TrysteroSetup
 import rdts.base.Lattice
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,16 +23,16 @@ object ProjectController {
 
   // Synchronization
   // send all projects when a new device joins
-  TrysteroService.room.onPeerJoin(peerId =>
+  TrysteroSetup.room.onPeerJoin(peerId =>
     projects
       .now()
       .foreach(project =>
-        TrysteroService.sendProjectUpdate(project, List(peerId))
+        sendProjectUpdate(project, List(peerId))
       )
   )
 
   // listen for updates from other peers
-  TrysteroService.receiveProjectUpdate((newProject: Project) =>
+  receiveProjectUpdate((newProject: Project) =>
     val projectId = newProject.id
     val oldProject: Future[Project] = ProjectService.getProjectById(projectId)
     val oldPlusMerged = oldProject.map { old => // old value and merged value
@@ -66,7 +68,7 @@ object ProjectController {
     case ProjectEvent.Added(project) =>
       println(s"create project event received for $project")
       createProject(project)
-      TrysteroService.sendProjectUpdate(project)
+      sendProjectUpdate(project)
     case ProjectEvent.Deleted(id) =>
       println("delete project event received")
       deleteProject(id).onComplete {
@@ -79,7 +81,7 @@ object ProjectController {
       }
     case ProjectEvent.Updated(id, updatedProject) =>
       println("update project event received")
-      TrysteroService.sendProjectUpdate(updatedProject)
+      sendProjectUpdate(updatedProject)
       updateProject(id, updatedProject).onComplete {
         case Success(_) =>
           println(s"Project with id: ${id.toString} updated successfully!")
@@ -94,7 +96,7 @@ object ProjectController {
       )
       getProjectById(id).onComplete {
         case Success(p) =>
-          TrysteroService.sendProjectUpdate(
+          sendProjectUpdate(
             p.copy(status = p.status.write(newStatus))
           )
         case Failure(exception) => throw exception

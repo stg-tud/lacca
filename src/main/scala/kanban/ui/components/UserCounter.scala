@@ -1,16 +1,16 @@
 package kanban.ui.components
 
 import com.raquo.laminar.api.L.{*, given}
-import kanban.service.TrysteroService
+import kanban.sync.TrysteroSetup
 
 object UserCounter {
-  val numPeers: Signal[Int] = TrysteroService.peerList.signal.map(_.size)
+  val numPeers: Signal[Int] = TrysteroSetup.peerList.signal.map(_.size)
   val peerNames: Signal[List[String]] =
-    TrysteroService.peerList.signal.map(_.map(_._1))
+    TrysteroSetup.peerList.signal.map(_.map(_._1))
   def apply(): HtmlElement = {
     div(
       span(
-        text <-- TrysteroService.userId.signal.map(id => s"ID: $id")
+        text <-- TrysteroSetup.userId.signal.map(id => s"ID: $id")
       ),
       " | ",
       span(

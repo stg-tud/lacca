@@ -21,7 +21,9 @@ object ProjectCard {
       button(
         className := "delete-project-button",
         "Löschen",
-        onClick --> { _ => projectEventBus.emit(Deleted(projectId)) }
+        onClick --> { _ =>
+          println(s"project delete button clicked!!")
+          projectEventBus.emit(Deleted(projectId)) }
       ),
       br(),
       text <-- projectSignal.map(p => formatDate(p.deadline.read)),

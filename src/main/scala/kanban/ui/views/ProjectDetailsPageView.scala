@@ -2,13 +2,14 @@ package kanban.ui.views
 
 import com.raquo.laminar.api.L.*
 import kanban.controllers.ProjectController.projectEventBus
-import kanban.controllers.{ProjectController, Replica, UserController}
+import kanban.controllers.{ProjectController, UserController}
 import kanban.domain.events.ProjectEvent.Updated
 import kanban.domain.models.User.*
 import kanban.domain.models.{Project, ProjectStatus, User, UserId}
 import kanban.routing.Pages.{KanbanBoardPage, ProjectDetailsPage}
 import kanban.routing.Router
 import kanban.service.UserService.*
+import kanban.sync.Replica
 import kanban.ui.components.NavBar
 import rdts.datatypes.LastWriterWins
 import rdts.time.CausalTime

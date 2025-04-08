@@ -4,9 +4,10 @@ import scala.util.{Failure, Success}
 import com.raquo.laminar.api.L.{*, given}
 import kanban.domain.events.UserEvent
 import kanban.domain.models.User
-import kanban.service.{UserService, TrysteroService}
+import kanban.service.UserService
 import kanban.service.UserService.usersObservable
 import com.raquo.airstream.ownership.ManualOwner
+import kanban.sync.TrysteroSetup
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -70,7 +71,7 @@ object UserController {
 
         // Send message to other peers about the user deletion
         val message = s"User with ID $userId deleted!"
-        TrysteroService.sendMessage(message)
+        TrysteroSetup.sendMessage(message)
 
         // Delete user from IndexedDB after propagating the message
         UserService.deleteUser(Some(userId)).onComplete {
@@ -92,7 +93,7 @@ object UserController {
         println(s"User added successfully!")
         // After adding user, send a message to other peers
         val message = s"User ${user.name} added! ${user.id.getOrElse("")}:${user.name}:${user.age}:${user.email}:${user.password}"
-        TrysteroService.sendMessage(message)
+        TrysteroSetup.sendMessage(message)
       case Failure(exception) =>
         println(s"Failed to add user with id: ${user.id.get}. Exception: $exception")
     }
@@ -111,7 +112,7 @@ object UserController {
           val usersMessage = mergedUsers.toList.map(user => 
             s"${user.id.getOrElse("")}:${user.name}:${user.age}:${user.email}:${user.password}"
           ).mkString(",")
-          TrysteroService.sendMessage(s"Users changed: $usersMessage")
+          TrysteroSetup.sendMessage(s"Users changed: $usersMessage")
         }
         case Failure(exception) =>
           println(s"Error observing users: $exception")
@@ -120,7 +121,7 @@ object UserController {
   )
 
   // Listen for incoming messages via Trystero
-  TrysteroService.receiveMessage((data, peerId, metaData) => {
+  TrysteroSetup.receiveMessage((data, peerId, metaData) => {
     println(s"Received message from $peerId: $data")
     if (data.startsWith("Users changed:")) {
       handleUsersChangedMessage(data.stripPrefix("Users changed: "))

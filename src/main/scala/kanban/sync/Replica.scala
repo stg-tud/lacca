@@ -1,4 +1,5 @@
-package kanban.controllers
+package kanban.sync
+
 import com.raquo.airstream.state.Var
 import kanban.domain.models.Project.given
 import kanban.persistence.DexieDB.dexieDB

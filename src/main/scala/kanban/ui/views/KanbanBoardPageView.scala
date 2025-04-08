@@ -1,8 +1,9 @@
 package kanban.ui.views
 
 import com.raquo.laminar.api.L.{*, given}
-import kanban.controllers.{ProjectController, Replica, UserController}
+import kanban.controllers.{ProjectController, UserController}
 import kanban.domain.models.{Project, ProjectStatus}
+import kanban.sync.Replica
 import kanban.ui.components.{KanbanColumn, NavBar}
 import kanban.ui.views.DragAndDrop.setupDragAndDrop
 
