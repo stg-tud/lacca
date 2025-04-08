@@ -1,13 +1,15 @@
-package kanban.service
+package kanban.sync
 
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom.{RTCConfiguration, RTCIceServer, RTCPeerConnection}
 import typings.trystero.mod.*
+import typings.trystero.mod
+
 
 import scala.scalajs.js
 
-object TrysteroService {
-  val eturn = new RTCIceServer:
+object TrysteroSetup {
+  private val eturn = new RTCIceServer:
     urls = js.Array(
       "stun:relay1.expressturn.com:443",
       "turn:relay1.expressturn.com:3478",
@@ -15,18 +17,20 @@ object TrysteroService {
     )
     username = "efMS8M021S1G8NJ8J7"
     credential = "qrBXTlhKtCJDykOK"
-  val tturn = new RTCIceServer:
+
+  private val tturn = new RTCIceServer:
     urls = "stun:stun.t-online.de:3478"
 
-  val rtcConf = new RTCConfiguration:
+  private val rtcConf = new RTCConfiguration:
     iceServers = js.Array(eturn, tturn)
 
-  object DefaultConfig extends RelayConfig, BaseRoomConfig {
+  private object DefaultConfig extends RelayConfig, BaseRoomConfig {
     var appId = "lacca_test_1270"
     rtcConfig = rtcConf
   }
 
-  val room = joinRoom(DefaultConfig, "testroom")
+  // Public API
+  val room: Room = joinRoom(DefaultConfig, "testroom")
   val peerList: Var[List[(String, RTCPeerConnection)]] = Var(List.empty)
   val userId: Var[String] = Var(selfId)
 
@@ -41,11 +45,14 @@ object TrysteroService {
   println(s"my peer ID is $selfId")
   room.onPeerJoin(peerId =>
     println(s"$peerId joined")
-    peerList.set(room.getPeers().toList)
+    updatePeers()
   )
   room.onPeerLeave(peerId =>
     println(s"$peerId left")
-    peerList.set(room.getPeers().toList)
+    updatePeers()
   )
   receiveMessage((data, peerId, metaData) => println(s"got $data from $peerId"))
+
+  def updatePeers(): Unit =
+    peerList.set(room.getPeers().toList)
 }

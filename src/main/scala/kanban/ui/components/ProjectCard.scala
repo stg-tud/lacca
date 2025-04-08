@@ -2,9 +2,9 @@ package kanban.ui.components
 
 import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.ProjectController.projectEventBus
-import kanban.domain.models.{Project, ProjectId}
 import kanban.domain.events.ProjectEvent.{ClickedOn, Deleted}
-import kanban.ui.views.DragAndDrop.{isDragging}
+import kanban.domain.models.{Project, ProjectId}
+import kanban.ui.views.DragAndDrop.isDragging
 import org.scalajs.dom.HTMLElement
 
 import scala.scalajs.js.Date
@@ -16,19 +16,21 @@ object ProjectCard {
   ): HtmlElement = {
     div(
       className := "kanban-card",
-      text <-- projectSignal.map(_.name),
+      text <-- projectSignal.map(_.name.read),
       br(),
       button(
         className := "delete-project-button",
         "Löschen",
-        onClick --> { _ => projectEventBus.emit(Deleted(projectId)) }
+        onClick --> { _ =>
+          println(s"project delete button clicked!!")
+          projectEventBus.emit(Deleted(projectId)) }
       ),
       br(),
-      text <-- projectSignal.map(p => formatDate(p.deadline)),
+      text <-- projectSignal.map(p => formatDate(p.deadline.read)),
       br(),
-      text <-- projectSignal.map(_.revisorId.getOrElse(0).toString),
-      dataAttr("project-id") <-- projectSignal.map(_.id.get.toString),
-      dataAttr("name") <-- projectSignal.map(_.name),
+      text <-- projectSignal.map(_.revisorId.value.map(_.toString).getOrElse("")),
+      dataAttr("project-id") <-- projectSignal.map(_.id.delegate),
+      dataAttr("name") <-- projectSignal.map(_.name.read),
       dataAttr("x") := "0",
       dataAttr("y") := "0",
 

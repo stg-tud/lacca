@@ -6,6 +6,7 @@ import org.scalajs.dom.html.Div
 import kanban.controllers.ProjectController.projectEventBus
 import kanban.domain.events.ProjectEvent.Updated
 import kanban.domain.events.ProjectEvent.StatusModified
+import rdts.base.Uid
 
 object DragAndDrop {
   var isDragging: Boolean = false
@@ -59,8 +60,9 @@ object DragAndDrop {
             val newStatus = ProjectStatus.valueOf(idAttr)
             val projectName = draggableElement.getAttribute("data-name")
             val projectId: ProjectId =
-              Some(draggableElement.getAttribute("data-project-id").toInt)
+              Uid.predefined(draggableElement.getAttribute("data-project-id"))
 
+            //TODO: check if the printed projectId is correct
             println(s"projectId when dropped: $projectId")
             projectEventBus.emit(StatusModified(projectId, newStatus))
             

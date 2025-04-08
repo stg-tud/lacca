@@ -8,6 +8,7 @@ import kanban.domain.models.{Project, ProjectStatus, User}
 import kanban.service.UserService.getAllUsers
 import kanban.ui.views.KanbanBoardPageView.toggleDisplay
 import org.scalajs.dom
+import rdts.base.Uid
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
@@ -107,16 +108,13 @@ object AddProjectFormView {
                     onClick --> { e =>
                         toggleDisplay.update(t => "none")
                         projectEventBus.emit(Added(
-                            Project(
-                                id = None,
-                                name = projectName.now(),
-                                status = ProjectStatus.valueOf(projectStatus.now()),
-                                revisorId = projectRevisorId.now(),
-                                deadline = projectDeadline.now(),
-                                timeTracked = 0
-                            )
-                        ))
-                        }
+                          Project(
+                            name = projectName.now(), 
+                            status = ProjectStatus.valueOf(projectStatus.now()),
+                            revisorId = projectRevisorId.now(),
+                            deadline = projectDeadline.now()
+                          )))
+                    }
                 ),
                 button(
                     idAttr := "cancel-button",

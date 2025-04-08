@@ -1,42 +1,72 @@
 package kanban.domain.models
 
-import kanban.domain.models.UserId
+import org.getshaka.nativeconverter.{NativeConverter, ParseState}
+import rdts.base.{Lattice, LocalUid, Uid}
+import rdts.datatypes.{GrowOnlyCounter, LastWriterWins}
+import rdts.time.CausalTime
+
 import scala.scalajs.js
 import scala.scalajs.js.Date
-import scala.scalajs.js.JSConverters.JSRichOption
 
-type ProjectId = Option[Int]
+type ProjectId = Uid
 
-enum ProjectStatus:
-    case Neu, Geplant, InArbeit, Abrechenbar, Abgeschlossen
+enum ProjectStatus derives NativeConverter:
+  case Neu, Geplant, InArbeit, Abrechenbar, Abgeschlossen
 
 case class Project(
-                      id: ProjectId,
-                      name: String,
-                      status: ProjectStatus,
-                      revisorId: UserId,
-                      deadline: Option[Date],
-                      timeTracked: Double = 0
-                  ) {
-    def toJsObject: ProjectJsObject = {
-        js.Dynamic
-            .literal(
-                id = this.id.orUndefined,
-                name = this.name,
-                status = this.status.toString,
-                revisorId = this.revisorId.orUndefined,
-                deadline = this.deadline.orUndefined,
-                timeTracked = this.timeTracked
-            )
-            .asInstanceOf[ProjectJsObject]
-    }
-}
+    id: ProjectId,
+    name: LastWriterWins[String],
+    status: LastWriterWins[ProjectStatus],
+    revisorId: LastWriterWins[UserId],
+    deadline: LastWriterWins[Option[Date]],
+    timeTracked: GrowOnlyCounter = GrowOnlyCounter.zero
+) derives NativeConverter
 
-trait ProjectJsObject extends js.Object {
-    val id: js.UndefOr[Int]
-    val name: String
-    val status: String
-    val revisorId: js.UndefOr[Int]
-    val deadline: js.UndefOr[Date]
-    val timeTracked: Double
+object Project {
+  def apply(
+      name: String,
+      status: ProjectStatus,
+      revisorId: UserId,
+      deadline: Option[Date]
+  ): Project = {
+    new Project(
+      id = Uid.gen(),
+      name = LastWriterWins(CausalTime.now(), name),
+      status = LastWriterWins(CausalTime.now(), status),
+      revisorId = LastWriterWins(CausalTime.now(), revisorId),
+      deadline = LastWriterWins(CausalTime.now(), deadline)
+    )
+  }
+
+  // JSON conversion
+  given NativeConverter[LocalUid] with {
+    extension (a: LocalUid)
+      override def toNative: js.Any =
+        NativeConverter[Uid].toNative(a.uid)
+    override def fromNative(ps: ParseState): LocalUid =
+      LocalUid(NativeConverter[Uid].fromNative(ps))
+  }
+  given NativeConverter[Uid] with {
+    extension (a: ProjectId)
+      override def toNative: js.Any =
+        a.delegate
+    override def fromNative(ps: ParseState): ProjectId =
+      Uid.predefined(ps.json.asInstanceOf[String])
+  }
+  given NativeConverter[Map[Uid, Int]] with {
+    extension (a: Map[Uid, Int])
+      override def toNative: js.Any =
+        NativeConverter[Map[String, Int]].toNative(
+          a.map((k, v) => (k.delegate, v))
+        )
+    override def fromNative(ps: ParseState): Map[ProjectId, Int] =
+      NativeConverter[Map[String, Int]]
+        .fromNative(ps.json)
+        .map((k, v) => (Uid.predefined(k), v))
+  }
+  given NativeConverter[GrowOnlyCounter] = NativeConverter.derived
+
+  // CRDT lattices
+  given Lattice[ProjectId] = Lattice.assertEquals
+  given Lattice[Project] = Lattice.derived
 }

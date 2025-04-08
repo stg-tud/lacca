@@ -2,18 +2,17 @@ package kanban.ui.views
 
 import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.{ProjectController, UserController}
-import kanban.domain.models.{Project, ProjectStatus, User}
+import kanban.domain.models.{Project, ProjectStatus}
+import kanban.sync.Replica
 import kanban.ui.components.{KanbanColumn, NavBar}
-import org.scalajs.dom.HTMLElement
-//import kanban.ui.views.AddProjectFormView
+import kanban.ui.views.DragAndDrop.setupDragAndDrop
 
 import scala.scalajs.js.Date
-import kanban.controllers.ProjectController.projectEventBus
-import kanban.ui.views.DragAndDrop.setupDragAndDrop
 
 object KanbanBoardPageView {
 
-  val selectedDeadlineVar = Var(Option.empty[Date])
+  println(s"current replicaId: ${Replica.id.now()}")
+  val selectedDeadlineVar: Var[Option[Date]] = Var(Option.empty[Date])
   val selectedRevisorIdVar: Var[Int] = Var(0)
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
@@ -51,8 +50,8 @@ object KanbanBoardPageView {
               "Bearbeiter"
             ),
             option(
-              value := "0",  // Value for "All Revisors"
-              "Bearbeiter"  // Label for the "All Revisors" option
+              value := "0", // Value for "All Revisors"
+              "Bearbeiter" // Label for the "All Revisors" option
             ),
             children <-- UserController.users.signal.map { users =>
               users.map { user =>
@@ -61,7 +60,7 @@ object KanbanBoardPageView {
             },
             onChange.mapToValue --> { value =>
               if (value == "0") {
-                selectedRevisorIdVar.set(0)  // Set to 0 for "All Revisors"
+                selectedRevisorIdVar.set(0) // Set to 0 for "All Revisors"
               } else {
                 selectedRevisorIdVar.set(value.toInt)
               }
@@ -87,13 +86,12 @@ object KanbanBoardPageView {
                       selectedDeadline: Option[Date]
                   ) =>
                     {
-                      projectsList.filter(p =>
-                        (p.status.toString == status) &&
-                          (selectedRevisorId == 0 || p.revisorId
-                            .contains(selectedRevisorId)) &&
-                          (selectedDeadline.isEmpty || p.deadline
-                            .contains(selectedDeadline.get))
-                      )
+                      projectsList
+                        .filter(p =>
+                          p.status.value.toString == status &&
+                            (selectedDeadline.isEmpty || p.deadline == selectedDeadline.get) &&
+                            (selectedRevisorId == 0 || p.revisorId.value.toString == selectedRevisorId.toString)
+                        )
                     }
                 }
             )
