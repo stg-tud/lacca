@@ -23,20 +23,29 @@ object ProjectCard {
         "Löschen",
         onClick --> { _ =>
           println(s"project delete button clicked!!")
-          projectEventBus.emit(Deleted(projectId)) }
+          projectEventBus.emit(Deleted(projectId))
+        }
       ),
       br(),
       text <-- projectSignal.map(p => formatDate(p.deadline.read)),
       br(),
-      text <-- projectSignal.map(_.revisorId.value.map(_.toString).getOrElse("")),
+      text <-- projectSignal.map(
+        _.revisorId.read.delegate
+          // _.revisorId.value.map(_.toString).getOrElse("")
+      ),
       dataAttr("project-id") <-- projectSignal.map(_.id.delegate),
       dataAttr("name") <-- projectSignal.map(_.name.read),
       dataAttr("x") := "0",
       dataAttr("y") := "0",
-
       onClick --> { e =>
-        if (!isDragging && !e.target.asInstanceOf[HTMLElement].classList.contains("delete-project-button"))
-          projectEventBus.emit(ClickedOn(projectId)) }
+        if (
+          !isDragging && !e.target
+            .asInstanceOf[HTMLElement]
+            .classList
+            .contains("delete-project-button")
+        )
+          projectEventBus.emit(ClickedOn(projectId))
+      }
     )
   }
 

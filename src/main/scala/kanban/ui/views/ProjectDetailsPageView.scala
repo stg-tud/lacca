@@ -17,6 +17,7 @@ import rdts.time.CausalTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
 import scala.util.{Failure, Success}
+import rdts.base.Uid
 
 object ProjectDetailsPageView {
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
@@ -27,7 +28,7 @@ object ProjectDetailsPageView {
     val isTimeTrackingSidebarVisible = Var(false)
     val timeInFormVar = Var(0.0)
     val editedStatusVar = Var("")
-    val editedRevisorIdVar: Var[UserId] = Var(None)
+    val editedRevisorIdVar: Var[UserId] = Var(Uid.zero)
     val editedDeadlineVar = Var[Option[Date]](None)
 
     div(
@@ -37,122 +38,141 @@ object ProjectDetailsPageView {
         child <-- projectDetailsPageSignal
           .combineWith(ProjectController.projects.signal)
           .map { case (ProjectDetailsPage(projectId), projects) =>
-            val project = projects.find(_.id == projectId).get
+            // Add proper error handling using Option.fold
+            projects
+              .find(_.id == projectId)
+              .fold(
+                // If no project is found, display an error message
+                div(
+                  cls := "project-not-found",
+                  h2("Project Not Found"),
+                  p(s"No project found with ID: ${projectId.delegate}"),
+                  button(
+                    cls := "back-button",
+                    "Back to Kanban Board",
+                    onClick --> { _ => Router.pushState(KanbanBoardPage) }
+                  )
+                )
+              ) { project =>
+                // If project is found, proceed with the normal view
+                editedStatusVar.set(project.status.toString)
+                editedDeadlineVar.set(project.deadline.value)
 
-            editedStatusVar.set(project.status.toString)
-//          editedRevisorIdVar.set(project.revisorId.value)
-            editedDeadlineVar.set(project.deadline.value)
+                div(
+                  cls := "project-details",
+                  h2(s"Project: ${project.name.read}"),
 
-            div(
-              cls := "project-details",
-              h2(s"Project: ${project.name}"),
-
-              // Editable status dropdown
-              div(
-                cls := "project-detail",
-                span(cls := "project-detail-label", "Status: "),
-                select(
-                  statusValues.map(status =>
-                    option(
-                      value := status,
-                      status,
-                      selected := (status == project.status.toString)
+                  // Editable status dropdown
+                  div(
+                    cls := "project-detail",
+                    span(cls := "project-detail-label", "Status: "),
+                    select(
+                      statusValues.map(status =>
+                        option(
+                          value := status,
+                          status,
+                          selected := (status == project.status.toString)
+                        )
+                      ),
+                      onChange.mapToValue --> editedStatusVar.set
                     )
                   ),
-                  onChange.mapToValue --> editedStatusVar.set
-                )
-              ),
 
-              // Editable revisor dropdown
-              div(
-                cls := "project-detail",
-                span(cls := "project-detail-label", "Bearbeiter: "),
-                select(
-                  children <-- UserController.users.signal.map { users =>
-                    users.map { user =>
-                      option(
-                        value := user.id.getOrElse(0).toString,
-                        user.name
+                  // Editable revisor dropdown
+                  div(
+                    cls := "project-detail",
+                    span(cls := "project-detail-label", "Bearbeiter: "),
+                    select(
+                      children <-- UserController.users.signal.map { users =>
+                        users.map { user =>
+                          option(
+                            value := user.id.delegate,
+                            user.name.read
 //                        selected := (user.id == project.revisorId)
-                      )
-                    }
-                  },
-                  onChange.mapToValue --> { userId =>
-                    if (userId.nonEmpty) {
-                      editedRevisorIdVar.set(
-                        Some(userId.toInt)
-                      ) // Set deadline as a Date object
-                    } else {
-                      println(s"userId is empty!!")
-                    }
-                  }
-                )
-              ),
-
-              // Editable deadline input (date picker)
-              div(
-                cls := "project-detail",
-                span(cls := "project-detail-label", "Fälligkeitsdatum: "),
-                input(
-                  typ := "date",
-                  value := project.deadline.value
-                    .map(_.toISOString().slice(0, 10))
-                    .getOrElse(""), // Format date as "YYYY-MM-DD"
-                  onInput.mapToValue --> { dateStr =>
-                    if (dateStr.nonEmpty) {
-                      editedDeadlineVar.set(Some(new Date(dateStr)))
-                    } else {
-                      editedDeadlineVar.set(None)
-                    }
-                  }
-                )
-              ),
-
-              // Function to display the total time tracked in "hour:minute" format
-              div(
-                cls := "project-detail",
-                span(cls := "project-detail-label", "Gesamte erfasste Zeit: "),
-                span(
-                  child.text <-- Var(project.timeTracked).signal
-                    .map(timeInMinutes => formatTime(timeInMinutes.value))
-                )
-              ),
-
-              // Button to open the time tracking sidebar
-              button(
-                cls := "time-tracking-button",
-                "Zeiterfassung",
-                onClick --> { _ => isTimeTrackingSidebarVisible.set(true) }
-              ),
-
-              // Conditionally render the sidebar
-              child.maybe <-- isTimeTrackingSidebarVisible.signal.map {
-                case true =>
-                  Some(
-                    renderTimeTrackingSidebar(
-                      timeInFormVar,
-                      isTimeTrackingSidebarVisible,
-                      project
+                          )
+                        }
+                      },
+                      onChange.mapToValue --> { userId =>
+                        if (userId.nonEmpty) {
+                          editedRevisorIdVar.set(
+                            Uid.predefined(userId)
+                          ) // Set deadline as a Date object
+                        } else {
+                          println(s"userId is empty!!")
+                        }
+                      }
                     )
+                  ),
+
+                  // Editable deadline input (date picker)
+                  div(
+                    cls := "project-detail",
+                    span(cls := "project-detail-label", "Fälligkeitsdatum: "),
+                    input(
+                      typ := "date",
+                      value := project.deadline.value
+                        .map(_.toISOString().slice(0, 10))
+                        .getOrElse(""), // Format date as "YYYY-MM-DD"
+                      onInput.mapToValue --> { dateStr =>
+                        if (dateStr.nonEmpty) {
+                          editedDeadlineVar.set(Some(new Date(dateStr)))
+                        } else {
+                          editedDeadlineVar.set(None)
+                        }
+                      }
+                    )
+                  ),
+
+                  // Function to display the total time tracked in "hour:minute" format
+                  div(
+                    cls := "project-detail",
+                    span(
+                      cls := "project-detail-label",
+                      "Gesamte erfasste Zeit: "
+                    ),
+                    span(
+                      child.text <-- Var(project.timeTracked).signal
+                        .map(timeInMinutes => formatTime(timeInMinutes.value))
+                    )
+                  ),
+
+                  // Button to open the time tracking sidebar
+                  button(
+                    cls := "time-tracking-button",
+                    "Zeiterfassung",
+                    onClick --> { _ => isTimeTrackingSidebarVisible.set(true) }
+                  ),
+
+                  // Conditionally render the sidebar
+                  child.maybe <-- isTimeTrackingSidebarVisible.signal.map {
+                    case true =>
+                      Some(
+                        renderTimeTrackingSidebar(
+                          timeInFormVar,
+                          isTimeTrackingSidebarVisible,
+                          project
+                        )
+                      )
+                    case false => None
+                  },
+                  button(
+                    cls := "save-button",
+                    "Speichern",
+                    onClick --> { _ =>
+                      val updatedProject = project.copy(
+                        status = project.status
+                          .write(ProjectStatus.valueOf(editedStatusVar.now())),
+                        revisorId =
+                          project.revisorId.write(editedRevisorIdVar.now()),
+                        deadline =
+                          project.deadline.write(editedDeadlineVar.now())
+                      )
+                      projectEventBus.emit(Updated(project.id, updatedProject))
+                      Router.pushState(KanbanBoardPage)
+                    }
                   )
-                case false => None
-              },
-              button(
-                cls := "save-button",
-                "Speichern",
-                onClick --> { _ =>
-                  val updatedProject = project.copy(
-                    status = project.status
-                      .write(ProjectStatus.valueOf(editedStatusVar.now())),
-                    revisorId =
-                      project.revisorId.write(editedRevisorIdVar.now()),
-                    deadline = project.deadline.write(editedDeadlineVar.now())
-                  )
-                  projectEventBus.emit(Updated(project.id, updatedProject))
-                  Router.pushState(KanbanBoardPage)
-                }
-              )
-            )
+                )
+              }
           }
       )
     )

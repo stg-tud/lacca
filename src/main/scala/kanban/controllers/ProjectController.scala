@@ -23,12 +23,11 @@ object ProjectController {
 
   // Synchronization
   // send all projects when a new device joins
+  // TODO: Also send updates for users
   TrysteroSetup.room.onPeerJoin(peerId =>
     projects
       .now()
-      .foreach(project =>
-        sendProjectUpdate(project, List(peerId))
-      )
+      .foreach(project => sendProjectUpdate(project, List(peerId)))
   )
 
   // listen for updates from other peers
@@ -113,7 +112,7 @@ object ProjectController {
       }
 
     case ProjectEvent.ClickedOn(projectId) =>
-      println(s"Clicked on project with id:}")
+      println(s"Clicked on project with id: ${projectId.toString}")
       Router.pushState(ProjectDetailsPage(projectId))
   }
 

@@ -1,35 +1,67 @@
 package kanban.domain.models
 
+import org.getshaka.nativeconverter.{NativeConverter, ParseState}
+import rdts.base.{Lattice, LocalUid, Uid}
+import rdts.datatypes.LastWriterWins
+import rdts.time.CausalTime
+
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichOption
 import scala.scalajs.js.UndefOr
 
-type UserId = Option[Int]
+type UserId = Uid
 
 case class User(
     id: UserId,
-    name: String,
-    age: Int,
-    email: String,
-    password: String
-) {
-  def toJsObject: UserJsObject = {
-    js.Dynamic
-      .literal(
-        id = this.id.orUndefined,
-        name = this.name,
-        age = this.age,
-        email = this.email,
-        password = this.password
-      )
-      .asInstanceOf[UserJsObject]
-  }
-}
+    name: LastWriterWins[String],
+    age: LastWriterWins[Int],
+    email: LastWriterWins[String],
+    password: LastWriterWins[String]
+) derives NativeConverter 
 
-trait UserJsObject extends js.Object {
-  val id: UndefOr[Int]
-  val name: String
-  val age: Int
-  val email: String
-  val password: String
+object User {
+  def apply(
+      name: String,
+      age: Int,
+      email: String,
+      password: String
+           ): User = {
+    new User(
+      id = Uid.gen(),
+        name = LastWriterWins(CausalTime.now(), name),
+        age = LastWriterWins(CausalTime.now(), age),
+        email = LastWriterWins(CausalTime.now(), email),
+        password = LastWriterWins(CausalTime.now(), password)
+    )
+  }
+  
+  given NativeConverter[LocalUid] with {
+    extension (a: LocalUid)
+      override def toNative: js.Any =
+          NativeConverter[Uid].toNative(a.uid)
+    override def fromNative(ps: ParseState): LocalUid =
+        LocalUid(NativeConverter[Uid].fromNative(ps))
+  }
+  given NativeConverter[Uid] with {
+    extension (a: UserId)
+      override def toNative: js.Any =
+          a.delegate
+    override def fromNative(ps: ParseState): UserId =
+        Uid.predefined(ps.json.asInstanceOf[String])
+  }
+  given NativeConverter[Map[Uid, Int]] with {
+    extension (a: Map[Uid, Int])
+      override def toNative: js.Any =
+          NativeConverter[Map[String, Int]].toNative(
+            a.map((k,v) => (k.delegate, v))
+          )
+          
+    override def fromNative(ps: ParseState): Map[UserId, Int] =
+        NativeConverter[Map[String, Int]]
+            .fromNative(ps.json)
+            .map((k,v) => (Uid.predefined(k), v))
+  }
+  
+  given Lattice[UserId] = Lattice.assertEquals
+  given Lattice[User] = Lattice.derived
 }

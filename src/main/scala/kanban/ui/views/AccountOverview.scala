@@ -11,6 +11,7 @@ import kanban.service.UserService.*
 
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
+import kanban.domain.events.UserEvent.Deleted
 
 object AccountOverview {
   def apply(): HtmlElement = {
@@ -41,18 +42,7 @@ object AccountOverview {
                   cls := "delete-user-button",
                   "Löschen",
                   onClick --> { _ =>
-                    user.id match {
-                      case Some(userId) =>
-                        deleteUser(Some(userId)).onComplete {
-                          case Success(_) =>
-                            println(s"User with ID $userId deleted successfully.")
-                            userEventBus.emit(UserEvent.Deleted(Some(userId)))
-                          case Failure(exception) =>
-                            println(s"Failed to delete user: ${exception.getMessage}")
-                        }
-                      case None =>
-                        println("User ID is not defined, cannot delete.")
-                    }
+                    userEventBus.emit(Deleted(user.id))
                   }
                 )
               )
@@ -72,7 +62,9 @@ object AccountOverview {
             cls := "user-age-input",
             placeholder := "Alter",
             `type` := "number",
-            onInput.mapToValue.filter(_.forall(_.isDigit)).map(_.toIntOption.getOrElse(0)) --> newAgeVar
+            onInput.mapToValue
+              .filter(_.forall(_.isDigit))
+              .map(_.toIntOption.getOrElse(0)) --> newAgeVar
           ),
           input(
             cls := "user-email-input",
@@ -86,12 +78,11 @@ object AccountOverview {
           ),
           button(
             cls := "add-user-button",
-            onClick --> { _ => 
+            onClick --> { _ =>
               val hashedPassword = hashPassword(newPasswordVar.now())
               userEventBus.emit(
                 UserEvent.Added(
                   User(
-                    id = None,
                     name = newNameVar.now(),
                     age = newAgeVar.now(),
                     email = newEmailVar.now(),
@@ -103,7 +94,6 @@ object AccountOverview {
             "Benutzer hinzufügen"
           )
         ),
-
         button(
           cls := "go-back-button",
           onClick --> { _ =>

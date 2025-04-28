@@ -2,10 +2,11 @@ package kanban.ui.views
 
 import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.{ProjectController, UserController}
-import kanban.domain.models.{Project, ProjectStatus}
+import kanban.domain.models.{Project, ProjectStatus, UserId}
 import kanban.sync.Replica
 import kanban.ui.components.{KanbanColumn, NavBar}
 import kanban.ui.views.DragAndDrop.setupDragAndDrop
+import rdts.base.Uid
 
 import scala.scalajs.js.Date
 
@@ -13,7 +14,7 @@ object KanbanBoardPageView {
 
   println(s"current replicaId: ${Replica.id.now()}")
   val selectedDeadlineVar: Var[Option[Date]] = Var(Option.empty[Date])
-  val selectedRevisorIdVar: Var[Int] = Var(0)
+  val selectedRevisorIdVar: Var[UserId] = Var(Uid.zero)
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
   val toggleDisplay: Var[String] = Var("none")
@@ -50,20 +51,16 @@ object KanbanBoardPageView {
               "Bearbeiter"
             ),
             option(
-              value := "0", // Value for "All Revisors"
+              value := Uid.zero.delegate, // Value for "All Revisors"
               "Bearbeiter" // Label for the "All Revisors" option
             ),
             children <-- UserController.users.signal.map { users =>
               users.map { user =>
-                option(value := user.id.getOrElse(0).toString, user.name)
+                option(value := user.id.delegate, user.name.read)
               }
             },
             onChange.mapToValue --> { value =>
-              if (value == "0") {
-                selectedRevisorIdVar.set(0) // Set to 0 for "All Revisors"
-              } else {
-                selectedRevisorIdVar.set(value.toInt)
-              }
+              selectedRevisorIdVar.set(Uid.predefined(value))
             }
           )
         ),
@@ -82,7 +79,7 @@ object KanbanBoardPageView {
                 .map {
                   (
                       projectsList: List[Project],
-                      selectedRevisorId: Int,
+                      selectedRevisorId: Uid,
                       selectedDeadline: Option[Date]
                   ) =>
                     {
@@ -90,7 +87,7 @@ object KanbanBoardPageView {
                         .filter(p =>
                           p.status.value.toString == status &&
                             (selectedDeadline.isEmpty || p.deadline == selectedDeadline.get) &&
-                            (selectedRevisorId == 0 || p.revisorId.value.toString == selectedRevisorId.toString)
+                            (selectedRevisorId == Uid.zero || p.revisorId.read == selectedRevisorId)
                         )
                     }
                 }
