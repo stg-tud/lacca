@@ -66,6 +66,25 @@ object Project {
   }
   given NativeConverter[GrowOnlyCounter] = NativeConverter.derived
 
+  given NativeConverter[Date] with {
+    extension (a: Date) override def toNative: js.Any = a.toISOString()
+
+    override def fromNative(ps: ParseState): Date =
+      new Date(ps.json.asInstanceOf[String])
+  }
+
+  given NativeConverter[Option[Date]] with {
+    extension (a: Option[Date])
+      override def toNative: js.Any = a match {
+        case Some(date) => date.toISOString()
+        case None       => null
+      }
+
+    override def fromNative(ps: ParseState): Option[Date] =
+      if (ps.json == null) None
+      else Some(new Date(ps.json.asInstanceOf[String]))
+  }
+
   // CRDT lattices
   given Lattice[ProjectId] = Lattice.assertEquals
   given Lattice[Project] = Lattice.derived
