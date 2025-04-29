@@ -34,10 +34,10 @@ object AccountOverview {
             users.map { user =>
               div(
                 cls := "user-item",
-                div(cls := "user-info", s"Name: ${user.name}"),
-                div(cls := "user-info", s"Alter: ${user.age}"),
-                div(cls := "user-info", s"Email: ${user.email}"),
-                div(cls := "user-info", s"Password: ${user.password}"),
+                div(cls := "user-info", s"Name: ${user.name.read}"),
+                div(cls := "user-info", s"Alter: ${user.age.read}"),
+                div(cls := "user-info", s"Email: ${user.email.read}"),
+                div(cls := "user-info", s"Password: ${user.password.read}"),
                 button(
                   cls := "delete-user-button",
                   "Löschen",
