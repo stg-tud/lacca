@@ -37,6 +37,9 @@ lazy val kanban = project
       "com.raquo" %%% "laminar" % "17.0.0",
       "com.raquo" %%% "waypoint" % "8.0.1",
       "de.tu-darmstadt.stg" %%% "rdts" % "0.37.0",
-      "org.getshaka" %%% "native-converter" % "0.9.0"
+      "org.getshaka" %%% "native-converter" % "0.9.0",
+      "io.circe" %%% "circe-core" % "0.14.5",
+      "io.circe" %%% "circe-generic" % "0.14.5",
+      "io.circe" %%% "circe-parser" % "0.14.5",
     )
   )
