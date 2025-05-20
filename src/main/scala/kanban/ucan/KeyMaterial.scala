@@ -1,6 +1,10 @@
 package kanban.ucan
 
-import org.scalajs.dom.KeyAlgorithmIdentifier
+import org.scalajs.dom
+import org.scalajs.dom.{CryptoKey, KeyAlgorithmIdentifier}
+
+import scala.scalajs.js.JSConverters.*
+import scala.scalajs.js.Promise
 
 //import java.security.{KeyFactory, PrivateKey, Signature}
 //import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
@@ -177,33 +181,29 @@ object Ed25519KeyMaterial {
       keyMaterial: Ed25519KeyMaterial,
       payload: Array[Byte]
   ): Future[Array[Byte]] = {
-    val privateKeyBytes =
+    val privateKeyBytes: Array[Byte] =
       keyMaterial.privateKey.getOrElse(
         throw new IllegalArgumentException(
           "Private key is required for signing"
         )
       )
-    val algo = js.Dynamic.literal(name = "Ed25519")
-    val extractable = false
-    val keyUsages = js.Array("sign")
 
-    val importKeyPromise = crypto.subtle
+    val importKeyPromise: Promise[CryptoKey] = crypto.subtle
       .importKey(
-        format = "pkcs8",
+        format = dom.KeyFormat.pkcs8,
         // keyData = Int8Array.from(privateKeyBytes).buffer,
-        keyData = ,
-        algorithm = algo,
-        extractable = extractable,
-        keyUsages = keyUsages
+        keyData = privateKeyBytes.toTypedArray,
+        algorithm = "Ed25519",
+        extractable = false,
+        keyUsages = js.Array(dom.KeyUsage.sign)
       )
-      .asInstanceOf[js.Promise[org.scalajs.dom.CryptoKey]]
 
     importKeyPromise.toFuture.flatMap { privateKey =>
       crypto.subtle
         .sign(
           algorithm = "Ed25519",
           key = privateKey,
-          data = new Int8Array(payload).buffer
+            data = payload.toTypedArray
         )
         .asInstanceOf[js.Promise[js.typedarray.ArrayBuffer]]
         .toFuture
