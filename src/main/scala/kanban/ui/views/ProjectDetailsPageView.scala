@@ -55,7 +55,8 @@ object ProjectDetailsPageView {
                 )
               ) { project =>
                 // If project is found, proceed with the normal view
-                editedStatusVar.set(project.status.toString)
+                editedRevisorIdVar.set(project.revisorId.read)
+                editedStatusVar.set(project.status.read.toString)
                 editedDeadlineVar.set(project.deadline.value)
 
                 div(
