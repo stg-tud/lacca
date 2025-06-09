@@ -30,6 +30,8 @@ object ProjectDetailsPageView {
     val editedStatusVar = Var("")
     val editedRevisorIdVar: Var[UserId] = Var(Uid.zero)
     val editedDeadlineVar = Var[Option[Date]](None)
+    val showPermittedUsersVar = Var(false)
+    val editedPermittedUserIdVar: Var[UserId] = Var(Uid.zero)
 
     div(
       NavBar(),
@@ -58,6 +60,12 @@ object ProjectDetailsPageView {
                 editedRevisorIdVar.set(project.revisorId.read)
                 editedStatusVar.set(project.status.read.toString)
                 editedDeadlineVar.set(project.deadline.value)
+                // Inside the project found branch, set the permitted user initially:
+                editedPermittedUserIdVar.set(
+                  project.permittedUsers.map(_.read).getOrElse(Uid.zero)
+                )
+
+                val currentStatusStr = project.status.read.toString
 
                 div(
                   cls := "project-details",
@@ -72,7 +80,7 @@ object ProjectDetailsPageView {
                         option(
                           value := status,
                           status,
-                          selected := (status == project.status.toString)
+                          selected := (status == currentStatusStr)
                         )
                       ),
                       onChange.mapToValue --> editedStatusVar.set
@@ -88,8 +96,8 @@ object ProjectDetailsPageView {
                         users.map { user =>
                           option(
                             value := user.id.delegate,
-                            user.name.read
-//                        selected := (user.id == project.revisorId)
+                            user.name.read,
+                            selected := (user.id == project.revisorId.read)
                           )
                         }
                       },
@@ -123,6 +131,36 @@ object ProjectDetailsPageView {
                       }
                     )
                   ),
+
+                  button(
+                    cls := "toggle-users-button",
+                    "Zugelassene Benutzer anzeigen",
+                    onClick --> { _ => showPermittedUsersVar.update(!_)}
+                  ),
+
+                  child.maybe <-- showPermittedUsersVar.signal.map {
+                    case true =>
+                      Some(
+                        div(
+                          cls := "permitted-users-list",
+                          span("Zugelassene Benutzer: "),
+                          child <-- UserController.users.signal.map { users =>
+                            // Filter users that are permitted in this project
+                            val permittedUserIds = project.permittedUsers.map(_.read).toSet
+                            val permittedUsers = users.filter(user => permittedUserIds.contains(user.id))
+                            if permittedUsers.isEmpty then
+                              div("Keine zugelassenen Benutzer")
+                            else
+                              ul(
+                                permittedUsers.map(user =>
+                                  li(user.name.read)
+                                )
+                              )
+                            }
+                        )
+                      )
+                    case false => None
+                  },
 
                   // Function to display the total time tracked in "hour:minute" format
                   div(

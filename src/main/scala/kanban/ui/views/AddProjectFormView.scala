@@ -24,6 +24,8 @@ object AddProjectFormView {
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
 
+  val permittedUsers = Var(Set.empty[UserId])
+
   def apply(): HtmlElement = {
     div(
       idAttr := "add-project-form",
@@ -112,7 +114,8 @@ object AddProjectFormView {
                   name = projectName.now(),
                   status = ProjectStatus.valueOf(projectStatus.now()),
                   revisorId = projectRevisorId.now(),
-                  deadline = projectDeadline.now()
+                  deadline = projectDeadline.now(),
+                  permittedUsers = Some(projectRevisorId.now())
                 )
               )
             )

@@ -19,7 +19,8 @@ case class Project(
     status: LastWriterWins[ProjectStatus],
     revisorId: LastWriterWins[UserId],
     deadline: LastWriterWins[Option[Date]],
-    timeTracked: GrowOnlyCounter = GrowOnlyCounter.zero
+    timeTracked: GrowOnlyCounter = GrowOnlyCounter.zero,
+    permittedUsers: Option[LastWriterWins[UserId]]
 ) derives NativeConverter
 
 object Project {
@@ -27,14 +28,16 @@ object Project {
       name: String,
       status: ProjectStatus,
       revisorId: UserId,
-      deadline: Option[Date]
+      deadline: Option[Date],
+      permittedUsers: Option[UserId]
   ): Project = {
     new Project(
       id = Uid.gen(),
       name = LastWriterWins(CausalTime.now(), name),
       status = LastWriterWins(CausalTime.now(), status),
       revisorId = LastWriterWins(CausalTime.now(), revisorId),
-      deadline = LastWriterWins(CausalTime.now(), deadline)
+      deadline = LastWriterWins(CausalTime.now(), deadline),
+      permittedUsers = Some(LastWriterWins(CausalTime.now(), revisorId))
     )
   }
 
