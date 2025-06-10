@@ -20,7 +20,8 @@ case class Project(
     revisorId: LastWriterWins[UserId],
     deadline: LastWriterWins[Option[Date]],
     timeTracked: GrowOnlyCounter = GrowOnlyCounter.zero,
-    permittedUsers: Option[LastWriterWins[UserId]]
+    permittedUsers: Option[LastWriterWins[UserId]],
+    listUsers: Option[LastWriterWins[Set[UserId]]]
 ) derives NativeConverter
 
 object Project {
@@ -29,7 +30,8 @@ object Project {
       status: ProjectStatus,
       revisorId: UserId,
       deadline: Option[Date],
-      permittedUsers: Option[UserId]
+      permittedUsers: Option[UserId],
+      listUsers: Option[Set[UserId]]
   ): Project = {
     new Project(
       id = Uid.gen(),
@@ -37,7 +39,8 @@ object Project {
       status = LastWriterWins(CausalTime.now(), status),
       revisorId = LastWriterWins(CausalTime.now(), revisorId),
       deadline = LastWriterWins(CausalTime.now(), deadline),
-      permittedUsers = Some(LastWriterWins(CausalTime.now(), revisorId))
+      permittedUsers = Some(LastWriterWins(CausalTime.now(), revisorId)),
+      listUsers = listUsers.map(users => LastWriterWins(CausalTime.now(), users))
     )
   }
 
@@ -87,6 +90,20 @@ object Project {
       if (ps.json == null) None
       else Some(new Date(ps.json.asInstanceOf[String]))
   }
+
+  // For list users test
+  given NativeConverter[Set[UserId]] with {
+    extension (a: Set[UserId])
+      override def toNative: js.Any =
+        NativeConverter[Seq[String]].toNative(a.map(_.delegate).toSeq)
+
+    override def fromNative(ps: ParseState): Set[UserId] =
+      NativeConverter[Seq[String]]
+        .fromNative(ps.json)
+        .map(Uid.predefined)
+        .toSet
+  }
+  // For list users test
 
   // CRDT lattices
   given Lattice[ProjectId] = Lattice.assertEquals

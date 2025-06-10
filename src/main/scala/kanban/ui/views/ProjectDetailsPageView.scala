@@ -138,6 +138,21 @@ object ProjectDetailsPageView {
                     onClick --> { _ => showPermittedUsersVar.update(!_)}
                   ),
 
+                  // List of all users
+                  child <-- UserController.users.signal.map { users =>
+                    val listUserIds: Set[UserId] = project.listUsers match {
+                      case Some(lwwSet) => lwwSet.read
+                      case None => Set.empty
+                    }
+                    println(s"listUserIds: $listUserIds")
+                    println(s"users IDs: ${users.map(_.id)}")
+                    println(project.listUsers)
+                    val listUsers = users.filter(user => listUserIds.contains(user.id))
+                    if (listUsers.isEmpty) div("Keine Benutzer in listUsers")
+                    else ul(listUsers.map(user => li(user.name.read)))
+                  },
+                  // List of all users
+
                   child.maybe <-- showPermittedUsersVar.signal.map {
                     case true =>
                       Some(
