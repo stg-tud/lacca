@@ -11,6 +11,8 @@ import kanban.service.ProjectService
 import kanban.sync.ProjectSync.{receiveProjectUpdate, sendProjectUpdate}
 import kanban.sync.TrysteroSetup
 import rdts.base.Lattice
+import rdts.datatypes.LastWriterWins
+import rdts.time.CausalTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -54,7 +56,9 @@ object ProjectController {
     next = (queryResultFuture) =>
       queryResultFuture.onComplete {
         case Success(projectsSeq) => {
-          projects.set(projectsSeq.toList)
+          projects.set(
+            projectsSeq.filter(p => !p.deleted.exists(_.value)).toList
+          )
         }
         case Failure(exception) =>
           println(s"Error observing projects: $exception")
@@ -70,6 +74,24 @@ object ProjectController {
       sendProjectUpdate(project)
     case ProjectEvent.Deleted(id) =>
       println("delete project event received")
+      getProjectById(id).onComplete {
+        case Success(project) =>
+          val updated = project.copy(deleted = Some(LastWriterWins(CausalTime.now(), true)))
+          updateProject(id, updated).onComplete {
+            case Success(_) =>
+              println(s"Project with id: ${id.toString} marked as deleted successfully!")
+              sendProjectUpdate(updated)
+              // Immediately reflect deletion in the UI
+              val updatedList = projects.now().filterNot(_.id == id)
+              projects.set(updatedList)           
+            case Failure(exception) =>
+              println(s"Failed to mark project as deleted: $exception")
+          }          
+        case Failure(exception) =>
+          println(s"Failed to fetch project for deletion: $exception")
+      }
+      // This code deletely the project locally without the deleted tag
+      /*
       deleteProject(id).onComplete {
         case Success(_) =>
           println(s"Project with id: ${id.toString} deleted successfully!")
@@ -78,6 +100,7 @@ object ProjectController {
             s"Failed to delete project with id: ${id.toString}. Exception: $exception"
           )
       }
+      */
     case ProjectEvent.Updated(id, updatedProject) =>
       println("update project event received")
       sendProjectUpdate(updatedProject)
@@ -119,7 +142,10 @@ object ProjectController {
   def loadProjects(): Unit = {
     println("load projects called!")
     getAllProjects().onComplete {
-      case Success(data)      => projects.set(data.toList)
+      case Success(data)      =>
+        projects.set(
+          data.filter(p => !p.deleted.exists(_.value)).toList
+        )
       case Failure(exception) => println(s"Failed to load projects: $exception")
     }
   }
