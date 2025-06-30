@@ -24,11 +24,16 @@ object UserController {
 
   val userEventBus: EventBus[UserEvent] = new EventBus[UserEvent]
 
-  TrysteroSetup.room.onPeerJoin(peerId =>
-    users
-      .now()
-      .foreach(user => sendUserUpdate(user, List(peerId)))
-  )
+  // TODO: Following code doesn't run and hence users 
+  //  aren't synced when a new peer joins.
+  //  Weirdly, the similar code runs in ProjectController!!
+  //  Temporarily, moved this "initial users sync" code to
+  //  ProjectController.
+//  TrysteroSetup.room.onPeerJoin(peerId =>
+//    users
+//      .now()
+//      .foreach(user => sendUserUpdate(user, List(peerId)))
+//  )
 
   // listen for user updates from other peers
   receiveUserUpdate((newUser: User) =>

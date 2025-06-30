@@ -2,6 +2,7 @@ package kanban.controllers
 
 import com.raquo.airstream.ownership.ManualOwner
 import com.raquo.laminar.api.L.{*, given}
+import kanban.controllers.UserController.users
 import kanban.domain.events.ProjectEvent
 import kanban.domain.models.{Project, ProjectStatus}
 import kanban.routing.Pages.ProjectDetailsPage
@@ -10,6 +11,7 @@ import kanban.service.ProjectService.*
 import kanban.service.ProjectService
 import kanban.sync.ProjectSync.{receiveProjectUpdate, sendProjectUpdate}
 import kanban.sync.TrysteroSetup
+import kanban.sync.UserSync.sendUserUpdate
 import rdts.base.Lattice
 import rdts.datatypes.LastWriterWins
 import rdts.time.CausalTime
@@ -25,11 +27,15 @@ object ProjectController {
 
   // Synchronization
   // send all projects when a new device joins
-  // TODO: Also send updates for users
+  // TODO: Temporary fix for sending project and user updates
+  //  find a better way to do this!
   TrysteroSetup.room.onPeerJoin(peerId =>
     projects
       .now()
       .foreach(project => sendProjectUpdate(project, List(peerId)))
+    users
+      .now()
+      .foreach(user => sendUserUpdate(user, List(peerId)))
   )
 
   // listen for updates from other peers
