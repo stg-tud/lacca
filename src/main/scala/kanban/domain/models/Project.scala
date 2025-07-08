@@ -20,8 +20,7 @@ case class Project(
     revisorId: LastWriterWins[UserId],
     deadline: LastWriterWins[Option[Date]],
     timeTracked: GrowOnlyCounter = GrowOnlyCounter.zero,
-    permittedUsers: Option[LastWriterWins[UserId]],
-    listUsers: Option[LastWriterWins[Set[UserId]]],
+    listPermittedUsers: Option[LastWriterWins[Set[UserId]]],
     deleted: Option[LastWriterWins[Boolean]] = Some(LastWriterWins(CausalTime.now(), false))
 ) derives NativeConverter
 
@@ -31,8 +30,7 @@ object Project {
       status: ProjectStatus,
       revisorId: UserId,
       deadline: Option[Date],
-      permittedUsers: Option[UserId],
-      listUsers: Option[Set[UserId]]
+      listPermittedUsers: Option[Set[UserId]]
   ): Project = {
     new Project(
       id = Uid.gen(),
@@ -40,8 +38,7 @@ object Project {
       status = LastWriterWins(CausalTime.now(), status),
       revisorId = LastWriterWins(CausalTime.now(), revisorId),
       deadline = LastWriterWins(CausalTime.now(), deadline),
-      permittedUsers = Some(LastWriterWins(CausalTime.now(), revisorId)),
-      listUsers = listUsers.map(users => LastWriterWins(CausalTime.now(), users)),
+      listPermittedUsers = listPermittedUsers.map(users => LastWriterWins(CausalTime.now(), users)),
       deleted = Some(LastWriterWins(CausalTime.now(), false))
     )
   }

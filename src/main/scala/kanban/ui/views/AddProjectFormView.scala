@@ -108,7 +108,8 @@ object AddProjectFormView {
           "Hinzufügen",
           onClick --> { e =>
             toggleDisplay.update(t => "none")
-            val allUserIds: Set[UserId] = UserController.users.now().map(_.id).toSet
+            val revisorId = projectRevisorId.now()
+            val onlyRevisor: Set[UserId] = Set(revisorId)
             projectEventBus.emit(
               Added(
                 Project(
@@ -116,8 +117,7 @@ object AddProjectFormView {
                   status = ProjectStatus.valueOf(projectStatus.now()),
                   revisorId = projectRevisorId.now(),
                   deadline = projectDeadline.now(),
-                  permittedUsers = Some(projectRevisorId.now()),
-                  listUsers = Some(allUserIds)
+                  listPermittedUsers = Some(onlyRevisor)
                 )
               )
             )
