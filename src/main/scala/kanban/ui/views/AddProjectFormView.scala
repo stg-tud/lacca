@@ -4,7 +4,7 @@ import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.ProjectController.projectEventBus
 import kanban.controllers.UserController
 import kanban.domain.events.ProjectEvent.Added
-import kanban.domain.models.{Project, ProjectStatus, User, UserId}
+import kanban.domain.models.{Project, ProjectStatus, User, UserId, Permission, UserPermission}
 import kanban.service.UserService.getAllUsers
 import kanban.ui.views.KanbanBoardPageView.toggleDisplay
 import org.scalajs.dom
@@ -109,18 +109,19 @@ object AddProjectFormView {
           onClick --> { e =>
             toggleDisplay.update(t => "none")
             val revisorId = projectRevisorId.now()
-            val onlyRevisor: Set[UserId] = Set(revisorId)
-            projectEventBus.emit(
-              Added(
-                Project(
-                  name = projectName.now(),
-                  status = ProjectStatus.valueOf(projectStatus.now()),
-                  revisorId = projectRevisorId.now(),
-                  deadline = projectDeadline.now(),
-                  listPermittedUsers = Some(onlyRevisor)
-                )
-              )
+            val allUsers = UserController.users.now()
+            val permitted: Set[UserPermission] = allUsers.map { user =>
+              if (user.id == revisorId) UserPermission(user.id, Permission.Write)
+              else UserPermission(user.id, Permission.None)
+            }.toSet
+            val newProject = Project(
+              name = projectName.now(),
+              status = ProjectStatus.valueOf(projectStatus.now()),
+              revisorId = revisorId,
+              deadline = projectDeadline.now(),
+              permittedUsers = Some(permitted)
             )
+            projectEventBus.emit(Added(newProject))
           }
         ),
         button(

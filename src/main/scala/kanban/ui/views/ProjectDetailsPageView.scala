@@ -5,7 +5,7 @@ import kanban.controllers.ProjectController.projectEventBus
 import kanban.controllers.{ProjectController, UserController}
 import kanban.domain.events.ProjectEvent.Updated
 import kanban.domain.models.User.*
-import kanban.domain.models.{Project, ProjectStatus, User, UserId}
+import kanban.domain.models.{Project, ProjectStatus, User, UserId, UserPermission, Permission}
 import kanban.routing.Pages.{KanbanBoardPage, ProjectDetailsPage}
 import kanban.routing.Router
 import kanban.service.UserService.*
@@ -128,42 +128,55 @@ object ProjectDetailsPageView {
                     )
                   ),
 
+                  // Button to show all the users with their permissions
                   button(
                     cls := "toggle-users-button",
                     "Zugelassene Benutzer anzeigen",
                     onClick --> { _ => showPermittedUsersVar.update(!_)}
                   ),
 
-                  // List of all users with permission level select
+                  child <-- showPermittedUsersVar.signal.combineWith(UserController.users.signal).map {
+                    case (true, users) =>
+                      val userSet: Set[UserPermission] = project.permittedUsers.map(_.value).getOrElse(Set.empty)
+                      val userMap: Map[UserId, User] = users.map(u => u.id -> u).toMap                      
+                      ul(
+                        for (perm <- userSet.toList.sortBy(_.userId.delegate)) yield {
+                          val userName = userMap.get(perm.userId).map(_.name.read).getOrElse("Unbekannt")
+                          li(s"👤 $userName: ${perm.permission}")
+                        }
+                      )
+                    case (false, _) => emptyNode
+                  },
+
                   child <-- UserController.users.signal.map { users =>
-                    val currentPermittedIds: Set[UserId] = project.listPermittedUsers match {
-                      case Some(lwwSet) => lwwSet.read
-                      case None         => Set.empty
-                    }
+                    val currentPermissions: Set[UserPermission] = project.permittedUsers.map(_.value).getOrElse(Set.empty)
+                    val permissionsByUserId: Map[UserId, String] =
+                      currentPermissions.map(p => p.userId -> p.permission.toString).toMap
                     
                     div(
                       h3("Benutzerberechtigungen"),
                       ul(
                         users.map { user =>
-                          val currentPermission: String = 
-                            if (currentPermittedIds.contains(user.id)) "Write" else "None"
+                          val currentPerm: String = permissionsByUserId.getOrElse(user.id, "None")               
                           li(
                             span(user.name.read + ": "),
                             select(
-                              option(value := "None", "None", selected := (currentPermission == "None")),
-                              option(value := "Write", "Write", selected := (currentPermission == "Write")),
+                              option(value := "None", "None", selected := (currentPerm == "None")),
+                              option(value := "Read", "Read", selected := (currentPerm == "Read")),
+                              option(value := "Write", "Write", selected := (currentPerm == "Write")),
                               onChange.mapToValue --> { newPermission =>
-                                val currentSet: Set[UserId] = project.listPermittedUsers.map(_.read).getOrElse(Set.empty)
-                                val newSet = 
-                                  if (newPermission == "Write") currentSet + user.id
-                                  else currentSet - user.id
-                                
-                                val updatedCRDT = project.listPermittedUsers match {
-                                  case Some(lww) => lww.write(newSet)
-                                  case None => LastWriterWins(CausalTime.now(), newSet)
+                                val updatedSet: Set[UserPermission] = {
+                                  val filtered = currentPermissions.filterNot(_.userId == user.id)
+                                  if newPermission != "None" then
+                                    filtered + UserPermission(user.id, Permission.valueOf(newPermission))
+                                  else
+                                    filtered
+                                }                    
+                                val updatedCRDT = project.permittedUsers match {
+                                  case Some(crdt) => crdt.write(updatedSet)
+                                  case None       => LastWriterWins(CausalTime.now(), updatedSet)
                                 }
-                                
-                                val updatedProject = project.copy(listPermittedUsers = Some(updatedCRDT))
+                                val updatedProject = project.copy(permittedUsers = Some(updatedCRDT))
                                 projectEventBus.emit(Updated(project.id, updatedProject))
                               }
                             )
@@ -171,34 +184,6 @@ object ProjectDetailsPageView {
                         }
                       )
                     )
-                  },
-                  // List of all users with permission level select
-
-                  child.maybe <-- showPermittedUsersVar.signal.map {
-                    case true =>
-                      Some(
-                        div(
-                          cls := "permitted-users-list",
-                          span("Zugelassene Benutzer: "),
-                          child <-- UserController.users.signal.map { users =>
-                            val permittedUserIds: Set[UserId] =
-                              project.listPermittedUsers
-                              .map(_.read)
-                              .getOrElse(Set.empty)
-                            
-                            val permittedUsers = users.filter(user => permittedUserIds.contains(user.id))
-                            if permittedUsers.isEmpty then
-                              div("Keine zugelassenen Benutzer")
-                            else
-                              ul(
-                                permittedUsers.map(user =>
-                                  li(user.name.read)
-                                )
-                              )
-                          }
-                        )
-                      )
-                    case false => None
                   },
 
                   // Function to display the total time tracked in "hour:minute" format
