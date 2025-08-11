@@ -11,7 +11,8 @@ object DexieDB {
       StringDictionary(
         ("projects", "id"),
         ("users", "++id"),
-        ("replicas", "slot")
+        ("replicas", "slot"),
+        ("keyPairs", "keyId")
       )
     )
 }
