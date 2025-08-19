@@ -2,18 +2,20 @@ package kanban.auth
 
 import kanban.persistence.DexieDB.dexieDB
 import typings.dexie.mod.Table
-import ucan.{Ed25519KeyMaterial, KeyMaterial, Base32}
+import ucan.{Base32, Ed25519KeyMaterial, KeyMaterial}
 import com.raquo.airstream.state.Var
+import org.scalajs.dom.{CryptoKeyPair, KeyUsage, crypto, CryptoKey}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import scala.scalajs.js
 import scala.concurrent.Future
 
-object KeyPair {
+object KeyMaterialSingleton {
 
   val publicKey: Var[Option[Array[Byte]]] = Var(None)
   val privateKey: Var[Option[Array[Byte]]] = Var(None)
+  val keyMaterial: Var[Option[KeyMaterial]] = Var(None)
 
   trait KeyPairTableEntry extends js.Object {
     val keyId: Int
@@ -33,6 +35,11 @@ object KeyPair {
     case Success(Some(entry)) =>
       publicKey.set(Some(Base32.decode(entry.publicKey)))
       privateKey.set(Some(Base32.decode(entry.privateKey)))
+      keyMaterial.set(Some(
+        Ed25519KeyMaterial(
+          publicKey = Base32.decode(entry.publicKey),
+        privateKey = if (entry.privateKey.nonEmpty) Some(Base32.decode(entry.privateKey)) else None)
+      ))
       println(s"Found key pair in database: Public Key: ${publicKey.now().getOrElse("None")}, Private Key: ${privateKey.now().getOrElse("None")}")
 
     case Success(None) =>
