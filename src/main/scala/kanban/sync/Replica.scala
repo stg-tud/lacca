@@ -10,12 +10,12 @@ import typings.dexie.mod.Table
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.util.{Failure, Success}
-import kanban.auth.KeyPair
+import kanban.auth.KeyMaterialSingleton
 
 object Replica {
-  val keyPair = KeyPair
+  val keyMaterial = KeyMaterialSingleton.keyMaterial
 
-  println(s"Initializing Replica... ${keyPair.publicKey.now().getOrElse("No public key found")}")
+  println(s"Initializing Replica... ${keyMaterial.now()}")
 
   private val replicaIdTable: Table[replicaDBEntry, Int, replicaDBEntry] =
     dexieDB.table("replicas")
