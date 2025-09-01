@@ -12,7 +12,8 @@ object DexieDB {
         ("projects", "id"),
         ("users", "++id"),
         ("replicas", "slot"),
-        ("keyPairs", "keyId")
+        ("keyPairs", "keyId"),
+        ("tokens", "id")
       )
     )
 }
