@@ -13,7 +13,7 @@ object DexieDB {
         ("users", "++id"),
         ("replicas", "slot"),
         ("keyPairs", "keyId"),
-        ("tokens", "id")
+        ("ucanTokens", "cid, *capKeys")
       )
     )
 }

@@ -2,6 +2,8 @@ package kanban.service
 
 import kanban.domain.models.{Project, ProjectId, ProjectStatus}
 import kanban.persistence.DexieDB.dexieDB
+import kanban.auth.KeyMaterialSingleton
+import kanban.auth.ProjectUcanService
 import org.getshaka.nativeconverter.NativeConverter
 import rdts.datatypes.LastWriterWins
 import typings.dexie.mod.{Table, liveQuery}
@@ -20,7 +22,11 @@ object ProjectService {
 
   def createProject(project: Project): Future[Any] = {
     println(s"createProject called!!")
-    projectsTable.put(project.toNative).toFuture
+    val ownerKm = KeyMaterialSingleton.keyMaterial
+    for {
+      putResult <- projectsTable.put(project.toNative).toFuture
+      _ <- ProjectUcanService.issueAndSave(project.id, ownerKm.now().get)
+    } yield putResult
   }
 
   def getAllProjects(): Future[Seq[Project]] = {
