@@ -125,4 +125,11 @@ object ProjectUcanService {
         .distinct
     }
   }
+
+  def tokensForUser(did: String): Future[Seq[UcanTokenStore.UcanTokenRow]] = {
+    for {
+      byIss <- UcanTokenStore.listByIssuer(did)
+      byAud <- UcanTokenStore.listByAudience(did)
+    } yield UcanTokenStore.filterUnexpired((byIss ++ byAud).distinct)
+  }
 }
