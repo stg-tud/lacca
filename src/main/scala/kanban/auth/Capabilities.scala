@@ -3,7 +3,7 @@ package kanban.auth
 import kanban.domain.models.ProjectId
 
 object Capabilities {
-  private val ProjectNs = "kanban:project"
+  val ProjectNs = "kanban:project"
 
   val Create = "create"
   val Read = "read"

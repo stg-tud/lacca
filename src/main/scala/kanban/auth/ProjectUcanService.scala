@@ -8,8 +8,10 @@ import kanban.domain.models.ProjectId
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Try, Success, Failure}
+import scala.scalajs.js
 
 import io.circe.Json
+import rdts.base.Uid
 
 object ProjectUcanService {
   import Capabilities.*
@@ -99,10 +101,28 @@ object ProjectUcanService {
     }
   }
 
-  def tokensForUser(did: String): Future[Seq[UcanTokenStore.UcanTokenRow]] = {
-    for {
-      byIss <- UcanTokenStore.listByIssuer(did)
-      byAud <- UcanTokenStore.listByAudience(did)
-    } yield UcanTokenStore.filterUnexpired((byIss ++ byAud).distinct)
+  // more query methods can be added here
+  // get all projects a user has a specific ability for
+  def getProjectsForUserWithAbility(
+      did: String,
+      ability: String
+  ): Future[Seq[ProjectId]] = {
+    UcanTokenStore.listByCapKey(s"$ProjectNs:$ability").map { rows =>
+      val unexpired = UcanTokenStore.filterUnexpired(rows)
+      unexpired
+        .filter(r => r.iss == did || r.aud == did)
+        .flatMap { r =>
+          r.capKeys.toOption.getOrElse(js.Array()).toSeq
+        }
+        .filter(key => key.endsWith(s"#$ability"))
+        .map { key =>
+          // Extract projectId from capability key format (resource#ability)
+          val resourcePart = key.split("#").head
+          val projectIdStr =
+            resourcePart.replace(projectResource(Uid.predefined("")), "")
+          Uid.predefined(projectIdStr)
+        }
+        .distinct
+    }
   }
 }
