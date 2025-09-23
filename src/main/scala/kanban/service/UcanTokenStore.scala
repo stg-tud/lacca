@@ -1,14 +1,16 @@
 package kanban.service
 
+import kanban.auth.DexieProofResolver
 import kanban.persistence.DexieDB.dexieDB
 import typings.dexie.mod.Table
 import ucan.Ucan
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 import scala.scalajs.js.Date
 import scala.scalajs.js.UndefOr
-import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.JSConverters.*
 
 object UcanTokenStore {
 
@@ -26,14 +28,21 @@ object UcanTokenStore {
   private val ucanTable: Table[UcanTokenRow, String, UcanTokenRow] =
     dexieDB.table("ucanTokens")
 
+  private def computeCapKeys(ucan: Ucan.Ucan): Seq[String] = {
+    ucan.payload.cap.flatMap { cap =>
+      cap.abilities.keys.map(ability => s"${cap.resource}#$ability")
+    }.distinct
+  }
+
   def save(
-      ucan: Ucan.Ucan,
-      capabilityKeys: Seq[String] = Nil
+      ucan: Ucan.Ucan
   ): Future[String] = {
     val jwt = Ucan.encodeJwt(ucan)
+    val caps = computeCapKeys(ucan)
     Ucan.createCID(ucan).flatMap { cidObj =>
+      val cidStr = cidObj.encode()
       val row = new UcanTokenRow {
-        val cid = cidObj.encode()
+        val cid = cidStr
         val token = jwt
         val iss = ucan.payload.iss
         val aud = ucan.payload.aud
@@ -45,37 +54,41 @@ object UcanTokenStore {
           case None    => js.undefined
         val createdAt = Date.now()
         val capKeys =
-          if (capabilityKeys.nonEmpty) capabilityKeys.toJSArray
+          if (caps.nonEmpty) caps.toJSArray
           else js.undefined
       }
-      ucanTable.put(row).toFuture.map(_ => cidObj.encode())
+      ucanTable.put(row).toFuture.map { _ =>
+        DexieProofResolver.onTokenSaved(cidStr, jwt)
+        cidStr
+      }
     }
   }
 
-  def saveJwt(jwt: String, capKeys: Seq[String] = Nil): Future[String] =
+  def saveJwt(jwt: String): Future[String] =
     scala.util
       .Try(Ucan.decodeJwt(jwt))
       .fold(
         err => Future.failed(err),
-        u => save(u.get, capKeys)
+        ucan => save(ucan.get)
       )
 
   // TODO: remove this demo method later
   def generateAndSaveRandom(): Future[String] =
     for {
-      // random keys for demo purpose
+      // keys for demo purposes
       issuerKm <- Ucan.createDefaultKeymaterial()
       audienceKm <- Ucan.createDefaultKeymaterial()
 
+      // build a minimal, valid payload
       payload = Ucan
         .builder()
         .issuedBy(issuerKm)
         .forAudience(audienceKm)
-        .withLifetime(5 * 60)
+        .withLifetime(5 * 60) // 5 minutes
         .claimingCapability(
           "urn:kanban:test",
           "debug/test"
-        ) // simple demo cap
+        )
         .withNonce()
         .build()
 
@@ -100,4 +113,12 @@ object UcanTokenStore {
       .toFuture
       .map(_.toSeq)
 
+  def filterUnexpired(
+      rows: Seq[UcanTokenRow],
+      nowMs: Double = Date.now()
+  ): Seq[UcanTokenRow] = {
+    rows.filter { r =>
+      r.exp.fold(true)(_.toDouble > nowMs)
+    }
+  }
 }

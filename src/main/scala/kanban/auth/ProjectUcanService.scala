@@ -7,38 +7,102 @@ import kanban.domain.models.ProjectId
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.{Try, Success, Failure}
+
+import io.circe.Json
 
 object ProjectUcanService {
-  private val ProjectNs = "kanban:project"
-  private val Create = "create"
+  import Capabilities.*
 
-  def resourceFor(projectId: ProjectId): String =
-    s"$ProjectNs:${projectId.delegate}"
+  private val didParser = Ucan.createDefaultDidParser()
 
   // issue new Ucan with same issuer and audience
-  def issue(
+  def issueProjectCreationToken(
       projectId: ProjectId,
-      creator: KM,
       lifetimeSeconds: Long = 365L * 24 * 3600
-  ): Future[Ucan.Ucan] = {
-    val payload =
-      Ucan
+  ): Future[String] = {
+    KeyMaterialSingleton.initializedKeyMaterial.flatMap { issuerKm =>
+      val payload = Ucan
         .builder()
-        .issuedBy(creator)
-        .forAudience(creator)
+        .issuedBy(issuerKm)
+        .forAudience(issuerKm)
         .withLifetime(lifetimeSeconds)
-        .claimingCapability(resourceFor(projectId), Create)
+        .claimingCapability(projectResource(projectId), Create)
         .withNonce()
         .build()
 
-    Ucan.sign(payload, creator)
+      Ucan.sign(payload, issuerKm).flatMap(UcanTokenStore.save)
+    }
   }
 
-  def issueAndSave(projectId: ProjectId, creator: KM): Future[String] = {
-    println(s"issueAndSave called for projectId: ${projectId}")
-    val capKey = s"${resourceFor(projectId)}#$Create"
-    issue(projectId, creator).flatMap(ucan =>
-      UcanTokenStore.save(ucan, capabilityKeys = Seq(capKey))
-    )
+  def delegateToDid(
+      projectId: ProjectId,
+      audienceDid: String,
+      abilities: Seq[String],
+      lifetimeSeconds: Long = 365L * 24 * 3600,
+      caveats: List[Json] = List(Json.obj())
+  ): Future[String] = {
+    KeyMaterialSingleton.initializedKeyMaterial.flatMap { issuerKm =>
+      val audienceKmTry = didParser.parse(audienceDid)
+      audienceKmTry match {
+        case Failure(e) => Future.failed(e)
+        case Success(audienceKm) =>
+          val createKey = projectCapKey(projectId, Create)
+          UcanTokenStore.listByCapKey(createKey).flatMap { rows =>
+            val unexpired = UcanTokenStore.filterUnexpired(rows)
+            val maybeProofCid: Option[String] =
+              unexpired.sortBy(_.createdAt).reverse.headOption.map(_.cid)
+
+            val builder0 =
+              Ucan
+                .builder()
+                .issuedBy(issuerKm)
+                .forAudience(audienceKm)
+                .withLifetime(lifetimeSeconds)
+                .withNonce()
+
+            val builderWithCaps =
+              abilities.foldLeft(builder0) { (b, ability) =>
+                b.claimingCapability(
+                  projectResource(projectId),
+                  ability,
+                  caveats
+                )
+              }
+
+            val builderWithProof = {
+              maybeProofCid match {
+                case Some(cidStr) =>
+                  val cid = Ucan.createDefaultCidParser().parse(cidStr).get
+                  builderWithCaps.witnessedBy(cid)
+
+                case None =>
+                  builderWithCaps
+              }
+
+            }
+            val payload = builderWithProof.build()
+            Ucan.sign(payload, issuerKm).flatMap(UcanTokenStore.save)
+          }
+      }
+    }
+  }
+
+  def currentUserDid(): Future[String] =
+    KeyMaterialSingleton.initializedKeyMaterial.map(didParser.keyMaterialToDid)
+
+  def userOwnsProject(projectId: ProjectId, did: String): Future[Boolean] = {
+    val key = projectCapKey(projectId, Create)
+    UcanTokenStore.listByCapKey(key).map { rows =>
+      val unexpired = UcanTokenStore.filterUnexpired(rows)
+      unexpired.exists(r => r.iss == did && r.aud == did)
+    }
+  }
+
+  def tokensForUser(did: String): Future[Seq[UcanTokenStore.UcanTokenRow]] = {
+    for {
+      byIss <- UcanTokenStore.listByIssuer(did)
+      byAud <- UcanTokenStore.listByAudience(did)
+    } yield UcanTokenStore.filterUnexpired((byIss ++ byAud).distinct)
   }
 }

@@ -22,11 +22,11 @@ object ProjectService {
 
   def createProject(project: Project): Future[Any] = {
     println(s"createProject called!!")
-    val ownerKm = KeyMaterialSingleton.keyMaterial
-    for {
-      putResult <- projectsTable.put(project.toNative).toFuture
-      _ <- ProjectUcanService.issueAndSave(project.id, ownerKm.now().get)
-    } yield putResult
+    projectsTable.put(project.toNative).toFuture.flatMap { putResult =>
+      ProjectUcanService
+        .issueProjectCreationToken(project.id)
+        .map(_ => putResult)
+    }
   }
 
   def getAllProjects(): Future[Seq[Project]] = {
