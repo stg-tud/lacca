@@ -19,6 +19,9 @@ import rdts.time.CausalTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+import kanban.sync.Replica
+import ucan.Base32
+import kanban.sync.ReplicaSync.sendReplicaInfo
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
@@ -36,6 +39,13 @@ object ProjectController {
     users
       .now()
       .foreach(user => sendUserUpdate(user, List(peerId)))
+    // send replica public key
+    Replica.id.now().foreach { replicaId =>
+      Replica.keyMaterial.now().foreach { km =>
+        val pk = Base32.encode(km.publicKey)
+        sendReplicaInfo(replicaId.show, pk, List(peerId))
+      }
+    }
   )
 
   // listen for updates from other peers

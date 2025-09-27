@@ -11,6 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.util.{Failure, Success}
 import kanban.auth.KeyMaterialSingleton
+import ucan.Base32
 
 object Replica {
   val keyMaterial = KeyMaterialSingleton.keyMaterial
@@ -25,6 +26,7 @@ object Replica {
   trait replicaDBEntry extends js.Object:
     val slot: Int
     val localUid: js.Any
+    val publicKey: String
 
   replicaIdTable
     .get(0)
@@ -34,14 +36,28 @@ object Replica {
       case Failure(f) => println(f)
       case Success(Some(value)) =>
         id.set(Some(NativeConverter[LocalUid].fromNative(value.localUid)))
-        println(s"Found replicaId ${id.now().get.show} in database")
+        println(s"Found replicaId ${id.now().get.show} in database with publicKey ${value.publicKey}")
+        // update publicKey if keyMaterial is available
+        keyMaterial.now().foreach { km =>
+          val pk = Base32.encode(km.publicKey)
+          val updatedEntry = new replicaDBEntry:
+            val slot: Int = 0
+            val localUid: js.Any = value.localUid
+            val publicKey: String = pk
+          replicaIdTable.put(updatedEntry)
+        }
+
       case Success(None) =>
         val newId = LocalUid.gen()
-        val entry = new replicaDBEntry:
-          val slot: Int = 0
-          val localUid: js.Any = newId.toNative
-        replicaIdTable.add(entry)
         id.set(Some(newId))
-        println(s"Generated new replicaId $newId")
+        keyMaterial.now().foreach { km =>
+          val pk = Base32.encode(km.publicKey)
+          val entry = new replicaDBEntry:
+            val slot: Int = 0
+            val localUid: js.Any = newId.toNative
+            val publicKey: String = pk
+          replicaIdTable.add(entry)
+          println(s"Generated new replicaId $newId with publicKey $pk")
+        }
     }
 }
