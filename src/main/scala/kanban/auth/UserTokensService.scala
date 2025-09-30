@@ -41,26 +41,6 @@ object UserTokensService {
     } yield UcanTokenStore.filterUnexpired((byIss ++ byAud).distinct)
   }
 
-  // get all the projects where the user has a specific ability
-  def getProjectsWithAbility(
-      did: String,
-      ability: String
-  ): Future[Seq[ProjectId]] = {
-    tokensForUser(did).map { tokens =>
-      tokens
-        .flatMap(r => r.capKeys.toOption.getOrElse(js.Array()).toSeq)
-        .filter(key => key.endsWith(s"#$ability"))
-        .map { key =>
-          // Extract projectId from capability key format (resource#ability)
-          val resourcePart = key.split("#").head
-          val projectIdStr =
-            resourcePart.replace(projectResource(Uid.predefined("")), "")
-          Uid.predefined(projectIdStr)
-        }
-        .distinct
-    }
-  }
-
   // Get all abilities a user has for a specific project
   def getUserAbilitiesForProject(
       did: String,

@@ -16,8 +16,6 @@ import ucan.Base32
 object Replica {
   val keyMaterial = KeyMaterialSingleton.keyMaterial
 
-  println(s"Initializing Replica... ${keyMaterial.now()}")
-
   private val replicaIdTable: Table[replicaDBEntry, Int, replicaDBEntry] =
     dexieDB.table("replicas")
 
@@ -36,7 +34,9 @@ object Replica {
       case Failure(f) => println(f)
       case Success(Some(value)) =>
         id.set(Some(NativeConverter[LocalUid].fromNative(value.localUid)))
-        println(s"Found replicaId ${id.now().get.show} in database with publicKey ${value.publicKey}")
+        println(
+          s"Found replicaId ${id.now().get.show} in database with publicKey ${value.publicKey}"
+        )
         // update publicKey if keyMaterial is available
         keyMaterial.now().foreach { km =>
           val pk = Base32.encode(km.publicKey)
