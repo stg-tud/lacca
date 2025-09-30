@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import kanban.sync.Replica
 import ucan.Base32
-import kanban.sync.ReplicaSync.sendReplicaInfo
+import kanban.sync.ReplicaSync.{sendReplicaInfo, receiveReplicaInfo}
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
@@ -40,13 +40,20 @@ object ProjectController {
       .now()
       .foreach(user => sendUserUpdate(user, List(peerId)))
     // send replica public key
-    Replica.id.now().foreach { replicaId =>
-      Replica.keyMaterial.now().foreach { km =>
+    Replica.id.signal.combineWith(Replica.keyMaterial.signal).foreach {
+      case (Some(replicaId), Some(km)) =>
         val pk = Base32.encode(km.publicKey)
         sendReplicaInfo(replicaId.show, pk, List(peerId))
-      }
+        println(s"[ProjectController] Sent success")
+      case _ => // not ready yet
     }
   )
+
+  // Listen for replica info from other peers
+  // TODO: Refactor this in another place
+  receiveReplicaInfo { (replicaId, publicKey, peerId) =>
+    println(s"[ProjectController] Received success")
+  }
 
   // listen for updates from other peers
   receiveProjectUpdate((newProject: Project) =>

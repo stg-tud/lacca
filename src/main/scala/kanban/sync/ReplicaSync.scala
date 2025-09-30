@@ -1,10 +1,8 @@
 package kanban.sync
 
 import com.raquo.laminar.api.L.{*, given}
-import org.getshaka.nativeconverter.NativeConverter
 import kanban.sync.TrysteroSetup.{room, updatePeers}
 import typings.trystero.mod.*
-
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
@@ -23,9 +21,11 @@ object ReplicaSync {
 
   /** Send your replica’s public key to everyone or specific peers */
   def sendReplicaInfo(replicaId: String, publicKey: String, targetPeers: List[String] = List.empty): Unit =
-    val info = new ReplicaInfo:
-      val replicaId: String = replicaId
-      val publicKey: String = publicKey
+    // Use js.Dynamic.literal to create a proper JS object
+    val info = js.Dynamic.literal(
+      replicaId = replicaId,
+      publicKey = publicKey
+    ).asInstanceOf[ReplicaInfo]
 
     if targetPeers.isEmpty then
       println(s"[ReplicaSync] Broadcasting replica $replicaId with pk=$publicKey to all peers")
@@ -37,7 +37,9 @@ object ReplicaSync {
   /** Listen for incoming replica public keys */
   def receiveReplicaInfo(callback: (replicaId: String, publicKey: String, peerId: String) => Unit): Unit =
     _receiveReplicaInfo((data: ReplicaInfo, peerId: String, metaData) =>
-      println(s"[ReplicaSync] Received replica ${data.replicaId} with pk=${data.publicKey} from peer $peerId")
-      callback(data.replicaId, data.publicKey, peerId)
+      val rid = Option(data.replicaId).getOrElse("unknown")
+      val pk  = Option(data.publicKey).getOrElse("unknown")
+      println(s"[ReplicaSync] Received replica $rid with pk=$pk from peer $peerId")
+      callback(rid, pk, peerId)
     )
 }
