@@ -22,11 +22,17 @@ import scala.util.{Failure, Success}
 import kanban.sync.Replica
 import ucan.Base32
 import kanban.sync.ReplicaSync.{sendReplicaInfo, receiveReplicaInfo}
+import kanban.sync.Replica.replicaIdTable
+import kanban.sync.Replica.replicaDBEntry
+import scala.scalajs.js
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
 
   val projectEventBus: EventBus[ProjectEvent] = new EventBus[ProjectEvent]
+
+  // Temporary in-memory storage for pending replicas
+  val pendingReplicas: Var[Map[String, String]] = Var(Map.empty)
 
   // Synchronization
   // send all projects when a new device joins
@@ -53,6 +59,28 @@ object ProjectController {
   // TODO: Refactor this in another place
   receiveReplicaInfo { (replicaId, publicKey, peerId) =>
     println(s"[ProjectController] Received success")
+    Option(publicKey).foreach { pk =>
+      // Update the pendingReplicas map
+      pendingReplicas.update(old => old + (replicaId -> pk))
+      // Assign next free slot and store in DB
+      replicaIdTable.toArray().toFuture.foreach { entries =>
+        val usedSlots = entries.map(_.slot).toSet
+        val newSlot   = Iterator.from(0).find(s => !usedSlots.contains(s)).get
+        val entry = new replicaDBEntry:
+          val slot: Int = newSlot
+          val localUid: js.Any = replicaId
+          val publicKey: String = pk
+
+        replicaIdTable.add(entry).toFuture.onComplete {
+          case Success(_) =>
+            println(s"[ProjectController] Stored replica info at slot=$newSlot with publicKey=$pk")
+            // Remove from pending after successful DB write
+            pendingReplicas.update(_ - replicaId)
+          case Failure(ex) =>
+            println(s"[ProjectController] Failed to store replica info: $ex")
+        }
+      }
+    }
   }
 
   // listen for updates from other peers

@@ -16,7 +16,7 @@ import ucan.Base32
 object Replica {
   val keyMaterial = KeyMaterialSingleton.keyMaterial
 
-  private val replicaIdTable: Table[replicaDBEntry, Int, replicaDBEntry] =
+  val replicaIdTable: Table[replicaDBEntry, Int, replicaDBEntry] =
     dexieDB.table("replicas")
 
   val id: Var[Option[LocalUid]] = Var(None)
@@ -26,8 +26,11 @@ object Replica {
     val localUid: js.Any
     val publicKey: String
 
+  // use slot = 0 only as a default for the first replica
+  val defaultSlot = 0
+
   replicaIdTable
-    .get(0)
+    .get(defaultSlot)
     .toFuture
     .map(_.toOption)
     .onComplete {
@@ -41,7 +44,7 @@ object Replica {
         keyMaterial.now().foreach { km =>
           val pk = Base32.encode(km.publicKey)
           val updatedEntry = new replicaDBEntry:
-            val slot: Int = 0
+            val slot: Int = value.slot
             val localUid: js.Any = value.localUid
             val publicKey: String = pk
           replicaIdTable.put(updatedEntry)
@@ -52,12 +55,16 @@ object Replica {
         id.set(Some(newId))
         keyMaterial.now().foreach { km =>
           val pk = Base32.encode(km.publicKey)
-          val entry = new replicaDBEntry:
-            val slot: Int = 0
-            val localUid: js.Any = newId.toNative
-            val publicKey: String = pk
-          replicaIdTable.add(entry)
-          println(s"Generated new replicaId $newId with publicKey $pk")
+          // dynamically choose next slot
+          replicaIdTable.count().toFuture.foreach { count =>
+            val newSlot = count.toInt
+            val entry = new replicaDBEntry:
+              val slot: Int = newSlot
+              val localUid: js.Any = newId.toNative
+              val publicKey: String = pk
+            replicaIdTable.add(entry)
+            println(s"Generated new replicaId $newId with publicKey $pk at slot $newSlot")
+          }
         }
     }
 }
