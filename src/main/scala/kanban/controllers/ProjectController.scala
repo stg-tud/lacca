@@ -60,25 +60,34 @@ object ProjectController {
   receiveReplicaInfo { (replicaId, publicKey, peerId) =>
     println(s"[ProjectController] Received success")
     Option(publicKey).foreach { pk =>
-      // Update the pendingReplicas map
-      pendingReplicas.update(old => old + (replicaId -> pk))
-      // Assign next free slot and store in DB
-      replicaIdTable.toArray().toFuture.foreach { entries =>
-        val usedSlots = entries.map(_.slot).toSet
-        val newSlot   = Iterator.from(0).find(s => !usedSlots.contains(s)).get
-        val entry = new replicaDBEntry:
-          val slot: Int = newSlot
-          val localUid: js.Any = replicaId
-          val publicKey: String = pk
+      // Check if this public key already exists in DB or pending
+      val PublicKeys = replicaIdTable.toArray().toFuture.map { entries =>
+        entries.exists(_.publicKey == pk) || pendingReplicas.now().values.toSet.contains(pk)
+      }
+      PublicKeys.foreach { alreadyStoredpk =>
+        if !alreadyStoredpk then
+          // Update the pendingReplicas map
+          pendingReplicas.update(old => old + (replicaId -> pk))
+          // Assign next free slot and store in DB
+          replicaIdTable.toArray().toFuture.foreach { entries =>
+            val usedSlots = entries.map(_.slot).toSet
+            val newSlot   = Iterator.from(0).find(s => !usedSlots.contains(s)).get
+            val entry = new replicaDBEntry:
+              val slot: Int = newSlot
+              val localUid: js.Any = replicaId
+              val publicKey: String = pk
 
-        replicaIdTable.add(entry).toFuture.onComplete {
-          case Success(_) =>
-            println(s"[ProjectController] Stored replica info at slot=$newSlot with publicKey=$pk")
-            // Remove from pending after successful DB write
-            pendingReplicas.update(_ - replicaId)
-          case Failure(ex) =>
-            println(s"[ProjectController] Failed to store replica info: $ex")
-        }
+            replicaIdTable.add(entry).toFuture.onComplete {
+              case Success(_) =>
+                println(s"[ProjectController] Stored replica info at slot=$newSlot with publicKey=$pk")
+                // Remove from pending after successful DB write
+                pendingReplicas.update(_ - replicaId)
+              case Failure(ex) =>
+                println(s"[ProjectController] Failed to store replica info: $ex")
+            }
+          }
+        else
+          println(s"[ProjectController] Public key $pk already stored, skipping redundant write")
       }
     }
   }
