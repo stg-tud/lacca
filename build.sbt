@@ -38,6 +38,9 @@ lazy val kanban = project
       "com.raquo" %%% "waypoint" % "8.0.1",
       "de.tu-darmstadt.stg" %%% "rdts" % "0.37.0",
       "org.getshaka" %%% "native-converter" % "0.9.0",
-      "de.tu_darmstadt.stg" %%% "ucan-scala" % "0.1.0",
-    )
+    ),
+
+    // depend on UCAN scala version
+    resolvers += "jitpack" at "https://jitpack.io",
+    libraryDependencies += "com.github.stg-tud" % "ucan-scala" % "0.1.6"
   )
