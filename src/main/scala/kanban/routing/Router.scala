@@ -11,7 +11,7 @@ object Router
       getPageTitle = _.title,
       serializePage = page => page.toJson,
       deserializePage = pageStr => NativeConverter[Page].fromJson(pageStr),
-      routeFallback = _ => Pages.KanbanBoardPage
+      routeFallback = _ => Pages.LoginPage
     )(
       popStateEvents = windowEvents(
         _.onPopState
