@@ -34,6 +34,15 @@ object User {
         password = LastWriterWins(CausalTime.now(), password)
     )
   }
+
+  /** Default user instance at the beginning to log in */
+  def default(): User = new User(
+    id = Uid.predefined("default-admin-uid"),  // fixed UID
+    name = LastWriterWins(CausalTime.now(), "admin"),
+    age = LastWriterWins(CausalTime.now(), 0),
+    email = LastWriterWins(CausalTime.now(), "admin@gmail.com"),
+    password = LastWriterWins(CausalTime.now(), "admin")
+  )
   
   given NativeConverter[LocalUid] with {
     extension (a: LocalUid)

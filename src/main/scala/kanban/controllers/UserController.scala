@@ -24,6 +24,11 @@ object UserController {
 
   val userEventBus: EventBus[UserEvent] = new EventBus[UserEvent]
 
+  // Add the default user
+  UserService.createDefaultUser().onComplete(_ =>
+    println("Default admin user exists with name: admin, password: admin")
+  )
+
   // TODO: Following code doesn't run and hence users 
   //  aren't synced when a new peer joins.
   //  Weirdly, the similar code runs in ProjectController!!

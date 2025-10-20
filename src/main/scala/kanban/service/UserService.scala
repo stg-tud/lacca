@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import scala.scalajs.js
 import kanban.persistence.BcryptJS
 import org.getshaka.nativeconverter.NativeConverter
+import rdts.datatypes.LastWriterWins
 
 object UserService {
 
@@ -19,6 +20,16 @@ object UserService {
   def createUser(user: User): Future[Any] = {
     // Add the user and return the result to get the ID after the user is inserted
     usersTable.put(user.toNative).toFuture
+  }
+
+  /** Create the default admin user in the database with hashed password */
+  def createDefaultUser(): Future[Any] = {
+    val defaultUser = User.default()
+    // hash the default password
+    val hashedUser = defaultUser.copy(
+      password = LastWriterWins(defaultUser.password.timestamp, hashPassword(defaultUser.password.value))
+    )
+    createUser(hashedUser) // store hashed password
   }
 
   def getAllUsers(): Future[Seq[User]] = {
