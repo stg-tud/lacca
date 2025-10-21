@@ -12,6 +12,7 @@ import scala.scalajs.js
 import scala.util.{Failure, Success}
 import kanban.auth.KeyMaterialSingleton
 import ucan.Base32
+import kanban.ui.views.GlobalState
 
 object Replica {
   val keyMaterial = KeyMaterialSingleton.keyMaterial
@@ -29,42 +30,53 @@ object Replica {
   // use slot = 0 only as a default for the first replica
   val defaultSlot = 0
 
-  replicaIdTable
-    .get(defaultSlot)
-    .toFuture
-    .map(_.toOption)
-    .onComplete {
-      case Failure(f) => println(f)
-      case Success(Some(value)) =>
-        id.set(Some(NativeConverter[LocalUid].fromNative(value.localUid)))
-        println(
-          s"Found replicaId ${id.now().get.show} in database with publicKey ${value.publicKey}"
-        )
-        // update publicKey if keyMaterial is available
-        keyMaterial.now().foreach { km =>
-          val pk = Base32.encode(km.publicKey)
-          val updatedEntry = new replicaDBEntry:
-            val slot: Int = value.slot
-            val localUid: js.Any = value.localUid
-            val publicKey: String = pk
-          replicaIdTable.put(updatedEntry)
-        }
+  // ✅ Only initialize replica after login
+  if (GlobalState.isLoggedIn) {
+    // TODO: fix it to the right userId, not the username
+    val userId = GlobalState.usernameVar.now() // current logged-in user name
 
-      case Success(None) =>
-        val newId = LocalUid.gen()
-        id.set(Some(newId))
-        keyMaterial.now().foreach { km =>
-          val pk = Base32.encode(km.publicKey)
-          // dynamically choose next slot
-          replicaIdTable.count().toFuture.foreach { count =>
-            val newSlot = count.toInt
-            val entry = new replicaDBEntry:
-              val slot: Int = newSlot
-              val localUid: js.Any = newId.toNative
+    replicaIdTable
+      .get(defaultSlot)
+      .toFuture
+      .map(_.toOption)
+      .onComplete {
+        case Failure(f) =>
+          println(s"[$userId] Failed to get replica: ${f.getMessage}")
+
+        case Success(Some(value)) =>
+          id.set(Some(NativeConverter[LocalUid].fromNative(value.localUid)))
+          println(
+            s"With the user id: [$userId] found replicaId ${id.now().get.show} in database with publicKey ${value.publicKey}"
+          )
+          keyMaterial.now().foreach { km =>
+            val pk = Base32.encode(km.publicKey)
+            val updatedEntry = new replicaDBEntry:
+              val slot: Int = value.slot
+              val localUid: js.Any = value.localUid
               val publicKey: String = pk
-            replicaIdTable.add(entry)
-            println(s"Generated new replicaId $newId with publicKey $pk at slot $newSlot")
+            replicaIdTable.put(updatedEntry)
           }
-        }
-    }
+
+        case Success(None) =>
+          val newId = LocalUid.gen()
+          id.set(Some(newId))
+          keyMaterial.now().foreach { km =>
+            val pk = Base32.encode(km.publicKey)
+            // dynamically choose next slot
+            replicaIdTable.count().toFuture.foreach { count =>
+              val newSlot = count.toInt
+              val entry = new replicaDBEntry:
+                val slot: Int = newSlot
+                val localUid: js.Any = newId.toNative
+                val publicKey: String = pk
+              replicaIdTable.add(entry)
+              println(
+                s"With the user id: [$userId], generated new replicaId $newId with publicKey $pk at slot $newSlot"
+              )
+            }
+          }
+      }
+  } else {
+    println("Not logged in — replicaId will not be created until login.")
+  }
 }

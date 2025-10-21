@@ -25,6 +25,7 @@ import kanban.sync.ReplicaSync.{sendReplicaInfo, receiveReplicaInfo}
 import kanban.sync.Replica.replicaIdTable
 import kanban.sync.Replica.replicaDBEntry
 import scala.scalajs.js
+import kanban.ui.views.GlobalState
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
@@ -49,7 +50,7 @@ object ProjectController {
     Replica.id.signal.combineWith(Replica.keyMaterial.signal).foreach {
       case (Some(replicaId), Some(km)) =>
         val pk = Base32.encode(km.publicKey)
-        sendReplicaInfo(replicaId.show, pk, List(peerId))
+        sendReplicaInfo(GlobalState.usernameVar.now(), replicaId.show, pk, List(peerId))
         println(s"[ProjectController] Sent success")
       case _ => // not ready yet
     }
@@ -57,7 +58,7 @@ object ProjectController {
 
   // Listen for replica info from other peers
   // TODO: Refactor this in another place
-  receiveReplicaInfo { (replicaId, publicKey, peerId) =>
+  receiveReplicaInfo { (userId, replicaId, publicKey, peerId) =>
     println(s"[ProjectController] Received success")
     Option(publicKey).foreach { pk =>
       // Check if this public key already exists in DB or pending
@@ -79,8 +80,7 @@ object ProjectController {
 
             replicaIdTable.add(entry).toFuture.onComplete {
               case Success(_) =>
-                println(s"[ProjectController] Stored replica info at slot=$newSlot with publicKey=$pk")
-                // Remove from pending after successful DB write
+                println(s"[ProjectController] Stored replica info at slot=$newSlot with publicKey=$pk for user $userId")
                 pendingReplicas.update(_ - replicaId)
               case Failure(ex) =>
                 println(s"[ProjectController] Failed to store replica info: $ex")

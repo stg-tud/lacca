@@ -12,6 +12,9 @@ import scala.scalajs.js
 // Global state for username with default "Guest"
 object GlobalState {
   val usernameVar = Var(getLoggedInUser().getOrElse("Guest"))
+
+  // Simple variable to track login state
+  var isLoggedIn: Boolean = usernameVar.now() != "Guest"
 }
 
 object LoginPageView {
@@ -52,6 +55,7 @@ object LoginPageView {
                 messageVar.set("Login successful")
                 // Store logged-in username in both GlobalState and localStorage
                 GlobalState.usernameVar.set(username)
+                GlobalState.isLoggedIn = true
                 js.Dynamic.global.localStorage
                   .setItem("username", username) // Store in localStorage
                 // Navigate to KanbanBoardPage on successful login
