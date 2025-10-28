@@ -11,17 +11,19 @@ import scala.scalajs.js
 
 // Global state for username with default "Guest"
 object GlobalState {
-  val usernameVar = Var(getLoggedInUser().getOrElse("Guest"))
+  // Restore saved username and userId from localStorage
+  private val storedUsername =
+    Option(js.Dynamic.global.localStorage.getItem("username").asInstanceOf[String])
+  private val storedUserId =
+    Option(js.Dynamic.global.localStorage.getItem("userId").asInstanceOf[String])
 
-  // Simple variable to track login state
-  var isLoggedIn: Boolean = usernameVar.now() != "Guest"
+  val usernameVar = Var(storedUsername.getOrElse("Guest"))
+  val userIdVar   = Var(storedUserId)
 }
 
 object LoginPageView {
   def apply(): HtmlElement = {
-
     val messageVar = Var("")
-
     val usernameVar = Var("")
     val passwordVar = Var("")
 
@@ -53,13 +55,23 @@ object LoginPageView {
             case Success(isValid) =>
               if (isValid) {
                 messageVar.set("Login successful")
-                // Store logged-in username in both GlobalState and localStorage
-                GlobalState.usernameVar.set(username)
-                GlobalState.isLoggedIn = true
-                js.Dynamic.global.localStorage
-                  .setItem("username", username) // Store in localStorage
-                // Navigate to KanbanBoardPage on successful login
-                Router.pushState(KanbanBoardPage)
+                // Find the userId from the DB
+                getAllUsers().foreach { users =>
+                  users.find(u =>
+                    u.name.read == username && checkPassword(password, u.password.read)
+                  ).foreach { user =>
+                    val userId = user.id.show
+                    GlobalState.usernameVar.set(username)
+                    GlobalState.userIdVar.set(Some(userId))
+                    // print userId to verify
+                    println(s"[Login] Logged in successfully with userId = $userId")
+                    // Store in localStorage, avoid losing login when reload
+                    js.Dynamic.global.localStorage.setItem("username", username)
+                    js.Dynamic.global.localStorage.setItem("userId", userId)
+
+                    Router.pushState(KanbanBoardPage)
+                  }
+                }
               } else {
                 messageVar.set("Incorrect credentials, please try again")
               }
