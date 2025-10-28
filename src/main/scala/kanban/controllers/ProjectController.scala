@@ -50,7 +50,12 @@ object ProjectController {
     Replica.id.signal.combineWith(Replica.keyMaterial.signal).foreach {
       case (Some(replicaId), Some(km)) =>
         val pk = Base32.encode(km.publicKey)
-        sendReplicaInfo(GlobalState.usernameVar.now(), replicaId.show, pk, List(peerId))
+        GlobalState.userIdVar.now() match
+          case Some(uid) =>
+            sendReplicaInfo(uid, replicaId.show, pk, List(peerId))
+            println(s"[ProjectController] Sent replica info for userId=$uid")
+          case None =>
+            println("[ProjectController] Cannot send replica info: userId not ready")
         println(s"[ProjectController] Sent success")
       case _ => // not ready yet
     }
