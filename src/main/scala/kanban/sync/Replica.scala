@@ -55,11 +55,12 @@ object Replica {
               )
               keyMaterial.now().foreach { km =>
                 val pk = Base32.encode(km.publicKey)
-                val updatedEntry = new replicaDBEntry:
-                  val slot: Int = value.slot
-                  val localUid: js.Any = value.localUid
-                  val publicKey: String = pk
-                  val userId: String = userId
+                val updatedEntry = js.Dynamic.literal(
+                  slot = value.slot,
+                  localUid = value.localUid,
+                  publicKey = pk,
+                  userId = userId
+                  ).asInstanceOf[replicaDBEntry]
                 replicaIdTable.put(updatedEntry)
               }
 
@@ -72,11 +73,12 @@ object Replica {
                 // dynamically choose next slot
                 replicaIdTable.count().toFuture.foreach { count =>
                   val newSlot = count.toInt
-                  val entry = new replicaDBEntry:
-                    val slot: Int = newSlot
-                    val localUid: js.Any = newId.toNative
-                    val publicKey: String = pk
-                    val userId: String = uid
+                  val entry = js.Dynamic.literal(
+                    slot = newSlot,
+                    localUid = newId.toNative,
+                    publicKey = pk,
+                    userId = uid
+                    ).asInstanceOf[replicaDBEntry]
                   replicaIdTable.add(entry)
                   println(
                     s"With the user id: [$userId], generated new replicaId $newId with publicKey $pk at slot $newSlot"
