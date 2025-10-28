@@ -28,6 +28,7 @@ object Replica {
     val slot: Int
     val localUid: js.Any
     val publicKey: String
+    val userId: String
 
   // use slot = 0 only as a default for the first replica
   val defaultSlot = 0
@@ -58,12 +59,14 @@ object Replica {
                   val slot: Int = value.slot
                   val localUid: js.Any = value.localUid
                   val publicKey: String = pk
+                  val userId: String = userId
                 replicaIdTable.put(updatedEntry)
               }
 
             case Success(None) =>
               val newId = LocalUid.gen()
               id.set(Some(newId))
+              val uid = userId // ensure to have the right userId, not null
               keyMaterial.now().foreach { km =>
                 val pk = Base32.encode(km.publicKey)
                 // dynamically choose next slot
@@ -73,6 +76,7 @@ object Replica {
                     val slot: Int = newSlot
                     val localUid: js.Any = newId.toNative
                     val publicKey: String = pk
+                    val userId: String = uid
                   replicaIdTable.add(entry)
                   println(
                     s"With the user id: [$userId], generated new replicaId $newId with publicKey $pk at slot $newSlot"

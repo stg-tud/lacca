@@ -77,6 +77,7 @@ object ProjectController {
               val slot: Int = newSlot
               val localUid: js.Any = replicaId
               val publicKey: String = pk
+              val userId: String = "test" // TODO: fix it later
 
             replicaIdTable.add(entry).toFuture.onComplete {
               case Success(_) =>
