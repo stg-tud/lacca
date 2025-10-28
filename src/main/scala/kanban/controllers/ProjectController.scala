@@ -78,11 +78,12 @@ object ProjectController {
           replicaIdTable.toArray().toFuture.foreach { entries =>
             val usedSlots = entries.map(_.slot).toSet
             val newSlot   = Iterator.from(0).find(s => !usedSlots.contains(s)).get
-            val entry = new replicaDBEntry:
-              val slot: Int = newSlot
-              val localUid: js.Any = replicaId
-              val publicKey: String = pk
-              val userId: String = "test" // TODO: fix it later
+            val entry = js.Dynamic.literal(
+              slot = newSlot,
+              localUid = replicaId,
+              publicKey = pk,
+              userId = userId
+              ).asInstanceOf[replicaDBEntry]
 
             replicaIdTable.add(entry).toFuture.onComplete {
               case Success(_) =>
