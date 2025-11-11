@@ -18,6 +18,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Date
 import scala.util.{Failure, Success}
 import rdts.base.Uid
+import kanban.auth.ProjectUcanService
+import ucan.Base32
 
 object ProjectDetailsPageView {
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
@@ -178,6 +180,8 @@ object ProjectDetailsPageView {
                                 }
                                 val updatedProject = project.copy(permittedUsers = Some(updatedCRDT))
                                 projectEventBus.emit(Updated(project.id, updatedProject))
+                                // --- Minimal UCAN delegation with only one token for one user's public key ---
+                                delegatePermissionToUser(project.id, user, newPermission)
                               }
                             )
                           )
@@ -386,5 +390,55 @@ object ProjectDetailsPageView {
     val hours = (durationInMinutes / 60).toInt
     val minutes = (durationInMinutes % 60).toInt
     f"$hours%02d:$minutes%02d" // Format as "hh:mm"
+  }
+
+  // --- Minimal UCAN delegation with only one token for one user's public key ---
+  private def delegatePermissionToUser(
+    projectId: Uid,
+    user: User,
+    permission: String
+    ): Unit = {
+      findUserPublicKey(user.id).foreach {
+        case Some(pubKeyStr) =>
+          val audienceDid = makeDidFromPublicKey(pubKeyStr)
+          ProjectUcanService
+          .delegateToDid(projectId, audienceDid, Seq(permission))
+          .onComplete {
+            case Success(token) =>
+              println(
+                s"UCAN token created for ${user.name.read} ($permission): $token"
+              )
+            case Failure(ex) =>
+              println(
+                s"Failed to create UCAN token for ${user.name.read}: ${ex.getMessage}"
+              )
+          }
+        case None =>
+          println(s"No replica entry found for user ${user.id.delegate}")
+      }
+    }
+
+  /** Finds and returns a user's public key from the replicaIdTable */
+  private def findUserPublicKey(userId: UserId)
+      : scala.concurrent.Future[Option[String]] = {
+    Replica.replicaIdTable.toArray().toFuture.map { entries =>
+      entries.find(e => e.userId.stripPrefix("🪪") == userId.delegate) match {
+        case Some(matched) =>
+          println(s"Found public key for user ${userId.delegate}: ${matched.publicKey}")
+          Some(matched.publicKey)
+        case None =>
+          println(s"No public key found for user ${userId.delegate}")
+          None
+      }
+    }
+  }
+
+  /** Converts a Base32-encoded Ed25519 public key into a did:key string */
+  private def makeDidFromPublicKey(pubKeyStr: String): String = {
+    val pubKeyBytes: Array[Byte] = Base32.decode(pubKeyStr)
+    val prefix: Array[Byte] = Array(0xED.toByte, 0x01.toByte) // Ed25519 multicodec prefix
+    val combined: Array[Byte] = prefix ++ pubKeyBytes
+    val base58Encoded: String = ucan.Base58.encode(combined)
+    s"did:key:z$base58Encoded"
   }
 }
