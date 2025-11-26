@@ -20,6 +20,7 @@ import scala.util.{Failure, Success}
 import rdts.base.Uid
 import kanban.auth.ProjectUcanService
 import ucan.Base32
+import kanban.sync.TokenSync
 
 object ProjectDetailsPageView {
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
@@ -426,6 +427,12 @@ object ProjectDetailsPageView {
             case Success(token) =>
               println(
                 s"UCAN token created for ${user.name.read} ($permission): $token"
+              )
+              // Minimal message broadcast token to other peers
+              TokenSync.sendToken(
+                projectId = projectId.delegate,
+                userId    = user.id.delegate,
+                token     = token
               )
             case Failure(ex) =>
               println(

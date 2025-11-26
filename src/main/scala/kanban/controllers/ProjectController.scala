@@ -26,6 +26,7 @@ import kanban.sync.Replica.replicaIdTable
 import kanban.sync.Replica.replicaDBEntry
 import scala.scalajs.js
 import kanban.ui.views.GlobalState
+import kanban.sync.TokenSync
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
@@ -97,6 +98,11 @@ object ProjectController {
           println(s"[ProjectController] Public key $pk already stored, skipping redundant write")
       }
     }
+  }
+
+  // --- Minimal Token receive callback, only the message ---
+  TokenSync.receiveToken { (projectId, userId, token) =>
+    println(s"[ProjectController] Received UCAN token for project $projectId from user $userId: $token")
   }
 
   // listen for updates from other peers
