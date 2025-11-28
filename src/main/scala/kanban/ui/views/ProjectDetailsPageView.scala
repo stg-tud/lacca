@@ -428,7 +428,7 @@ object ProjectDetailsPageView {
               println(
                 s"UCAN token created for ${user.name.read} ($permission): $token"
               )
-              // Minimal message broadcast token to other peers
+              // Broadcast token to other peers
               TokenSync.sendToken(
                 projectId = projectId.delegate,
                 userId    = user.id.delegate,

@@ -84,7 +84,11 @@ object ProjectUcanService {
 
             }
             val payload = builderWithProof.build()
-            Ucan.sign(payload, issuerKm).flatMap(UcanTokenStore.save)
+            // Return full JWT instead of CID
+            Ucan.sign(payload, issuerKm).flatMap { ucan =>
+              val jwt = Ucan.encodeJwt(ucan)
+              UcanTokenStore.save(ucan).map(_ => jwt)
+            }
           }
       }
     }
