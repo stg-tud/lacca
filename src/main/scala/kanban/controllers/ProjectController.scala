@@ -27,6 +27,7 @@ import kanban.sync.Replica.replicaDBEntry
 import scala.scalajs.js
 import kanban.ui.views.GlobalState
 import kanban.sync.TokenSync
+import kanban.service.UcanTokenStore
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
@@ -100,9 +101,18 @@ object ProjectController {
     }
   }
 
-  // --- Minimal Token receive callback, only the message ---
+  // Receive Tokens
   TokenSync.receiveToken { (projectId, userId, token) =>
     println(s"[ProjectController] Received UCAN token for project $projectId from user $userId: $token")
+
+    // save tokens in the database after syncing
+    UcanTokenStore.saveJwt(token).onComplete {
+      case Success(cid) =>
+        println(s"[ProjectController] Stored UCAN JWT locally. CID = $cid")
+
+      case Failure(ex) =>
+        println(s"[ProjectController] Failed to store UCAN token: ${ex.getMessage}")
+    }
   }
 
   // listen for updates from other peers
