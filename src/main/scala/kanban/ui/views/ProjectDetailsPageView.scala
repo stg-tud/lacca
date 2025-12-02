@@ -15,12 +15,16 @@ import rdts.datatypes.LastWriterWins
 import rdts.time.CausalTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js
 import scala.scalajs.js.Date
 import scala.util.{Failure, Success}
 import rdts.base.Uid
 import kanban.auth.ProjectUcanService
 import ucan.Base32
 import kanban.sync.TokenSync
+import kanban.service.UcanTokenStore
+import scala.concurrent.Future
+import ucan.Base58
 
 object ProjectDetailsPageView {
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
@@ -35,6 +39,12 @@ object ProjectDetailsPageView {
     val editedDeadlineVar = Var[Option[Date]](None)
     val showPermittedUsersVar = Var(false)
     val editedPermittedUserIdVar: Var[UserId] = Var(Uid.zero)
+    // Fetch the most recently created UCAN token row
+    val latestUcanSignal: Signal[Option[UcanTokenStore.UcanTokenRow]] =
+      EventStream
+        .fromFuture(UcanTokenStore.listAll())
+        .map(_.sortBy(_.createdAt).lastOption)
+        .toSignal(None)
 
     // Signal with User objects which in the replica table
     val replicaUsersSignal: Signal[Seq[User]] = 
@@ -174,6 +184,42 @@ object ProjectDetailsPageView {
 
                     div(
                       h3("Benutzerberechtigungen"),
+                      // Show latest UCAN token info
+                      // TODO: shows all the UCAN tokens
+                      div(s"Project ID: ${projectId.delegate}"), // Include the current project ID here
+                      // switch to a new stream for each value with flat map switch
+                      child <-- latestUcanSignal.combineWith(UserController.users.signal).flatMapSwitch {
+                        case (Some(row), users) =>
+                          val userId = lookupUserIdByDid(row.aud)
+
+                          EventStream.fromFuture(userId).map { maybeUserId =>
+                            val uidClean = maybeUserId.map(_.stripPrefix("🪪"))
+                            val username = uidClean.flatMap(id => users.find(_.id.delegate == id)
+                              .map(_.name.read)).getOrElse("Unbekannt")
+                            val audienceDisplay = uidClean.getOrElse("Unbekannt")
+
+                            div(
+                              cls := "latest-ucan-info",
+                              h4("Last saved UCAN Token"),
+                              div(s"Audience (userId): $audienceDisplay, Name: $username"),
+                              div(
+                                "Capabilities:",
+                                ul(
+                                  row.capKeys.toOption.getOrElse(js.Array()).toSeq.map { cap =>
+                                    val (projectId, permission) = parseCapability(cap)
+                                    li(s"Project ID: $projectId, Permission: $permission")
+                                  }
+                                )
+                              )
+                            )
+                          }
+
+                        case (None, _) =>
+                          EventStream.fromValue(
+                            div(cls := "latest-ucan-info-none", "Noch kein UCAN Token gespeichert.")
+                          )
+                      },
+                      h3("Benutzerberechtigungen mit CRDT"),
                       ul(
                         users.map { user =>
                           val currentPerm: String = permissionsByUserId.getOrElse(user.id, "None")
@@ -466,5 +512,30 @@ object ProjectDetailsPageView {
     val combined: Array[Byte] = prefix ++ pubKeyBytes
     val base58Encoded: String = ucan.Base58.encode(combined)
     s"did:key:z$base58Encoded"
+  }
+
+  /** Finds and returns audience id from the audience did */
+  private def lookupUserIdByDid(audienceDid: String): Future[Option[String]] = {
+    val didBase58 = audienceDid.stripPrefix("did:key:z")        // remove DID prefix
+    val didBytes = Base58.decode(didBase58)                     // decode Base58
+    val pubKeyBytes = didBytes.drop(2)                          // remove Ed25519 prefix
+    val pubKeyBase32 = Base32.encode(pubKeyBytes)              // convert to Base32
+
+    // search replica table for matching publicKey
+    Replica.replicaIdTable.toArray().toFuture.map { entries =>
+      entries.toSeq.find(_.publicKey == pubKeyBase32).map(_.userId)
+    }
+  }
+
+  /* Parses a capability string and returns (projectId, permission) */
+  private def parseCapability(cap: String): (String, String) = {
+    val parts = cap.split(":") // ["kanban", "project", <projectid>#<permission>]
+    if parts.length == 3 then
+      val projectAndPerm = parts(2).split("#") // [projectid, permission]
+      val projectId = projectAndPerm(0)
+      val permission = projectAndPerm.lift(1).getOrElse("None")
+      (projectId, permission)
+    else
+      ("Unknown", "Unknown")
   }
 }
