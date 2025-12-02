@@ -39,12 +39,11 @@ object ProjectDetailsPageView {
     val editedDeadlineVar = Var[Option[Date]](None)
     val showPermittedUsersVar = Var(false)
     val editedPermittedUserIdVar: Var[UserId] = Var(Uid.zero)
-    // Fetch the most recently created UCAN token row
-    val latestUcanSignal: Signal[Option[UcanTokenStore.UcanTokenRow]] =
-      EventStream
-        .fromFuture(UcanTokenStore.listAll())
-        .map(_.sortBy(_.createdAt).lastOption)
-        .toSignal(None)
+    // Fetch all the tokens
+    val allUcanSignal: Signal[Seq[UcanTokenStore.UcanTokenRow]] =
+      EventStream.fromFuture(UcanTokenStore.listAll())
+        .map(_.sortBy(_.createdAt)) // optional: sort by creation time
+        .toSignal(Seq.empty)
 
     // Signal with User objects which in the replica table
     val replicaUsersSignal: Signal[Seq[User]] = 
@@ -184,40 +183,36 @@ object ProjectDetailsPageView {
 
                     div(
                       h3("Benutzerberechtigungen"),
-                      // Show latest UCAN token info
-                      // TODO: shows all the UCAN tokens
+                      // Render all UCAN tokens with permissions
                       div(s"Project ID: ${projectId.delegate}"), // Include the current project ID here
-                      // switch to a new stream for each value with flat map switch
-                      child <-- latestUcanSignal.combineWith(UserController.users.signal).flatMapSwitch {
-                        case (Some(row), users) =>
-                          val userId = lookupUserIdByDid(row.aud)
+                      child <-- allUcanSignal.flatMapSwitch { rows =>
+                        EventStream.fromFuture {
+                          Future.sequence(
+                            rows.map { row =>
+                              lookupUserIdByDid(row.aud).map { maybeUserId =>
+                                val uidClean = maybeUserId.map(_.stripPrefix("🪪"))
+                                val username = uidClean.flatMap(id => users.find(_.id.delegate == id).
+                                  map(_.name.read)).getOrElse("Unbekannt")
+                                val audienceDisplay = uidClean.getOrElse("Unbekannt")
 
-                          EventStream.fromFuture(userId).map { maybeUserId =>
-                            val uidClean = maybeUserId.map(_.stripPrefix("🪪"))
-                            val username = uidClean.flatMap(id => users.find(_.id.delegate == id)
-                              .map(_.name.read)).getOrElse("Unbekannt")
-                            val audienceDisplay = uidClean.getOrElse("Unbekannt")
-
-                            div(
-                              cls := "latest-ucan-info",
-                              h4("Last saved UCAN Token"),
-                              div(s"Audience (userId): $audienceDisplay, Name: $username"),
-                              div(
-                                "Capabilities:",
-                                ul(
-                                  row.capKeys.toOption.getOrElse(js.Array()).toSeq.map { cap =>
-                                    val (projectId, permission) = parseCapability(cap)
-                                    li(s"Project ID: $projectId, Permission: $permission")
-                                  }
+                                div(
+                                  cls := "ucan-token-info",
+                                  h4(s"UCAN Token created at: ${new Date(row.createdAt).toISOString()}"),
+                                  div(s"Audience (userId): $audienceDisplay, Name: $username"),
+                                  div(
+                                    "Capabilities:",
+                                    ul(
+                                      row.capKeys.toOption.getOrElse(js.Array()).toSeq.map { cap =>
+                                        val (projectId, permission) = parseCapability(cap)
+                                        li(s"Project ID: $projectId, Permission: $permission")
+                                      }
+                                    )
+                                  )
                                 )
-                              )
-                            )
-                          }
-
-                        case (None, _) =>
-                          EventStream.fromValue(
-                            div(cls := "latest-ucan-info-none", "Noch kein UCAN Token gespeichert.")
-                          )
+                              }
+                            }
+                          ).map(div(_)) // wrap all token divs in one parent div
+                        }
                       },
                       h3("Benutzerberechtigungen mit CRDT"),
                       ul(
