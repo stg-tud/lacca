@@ -67,8 +67,6 @@ lazy val server = project
 //    },
     libraryDependencies ++= Seq(
       "org.http4s" %%% "http4s-ember-server" % Http4sVersion,
-      "org.http4s" %%% "http4s-circe" % Http4sVersion,
-      "io.circe" %%% "circe-generic" % CirceVersion,
       "org.http4s" %%% "http4s-dsl" % Http4sVersion,
 /*
       "org.typelevel" %% "cats-parse" % CatsParseVersion,
