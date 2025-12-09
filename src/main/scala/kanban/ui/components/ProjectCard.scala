@@ -2,6 +2,7 @@ package kanban.ui.components
 
 import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.ProjectController.projectEventBus
+import kanban.controllers.UserController
 import kanban.domain.events.ProjectEvent.{ClickedOn, Deleted}
 import kanban.domain.models.{Project, ProjectId}
 import kanban.ui.views.DragAndDrop.isDragging
@@ -29,8 +30,9 @@ object ProjectCard {
       br(),
       text <-- projectSignal.map(p => formatDate(p.deadline.read)),
       br(),
-      text <-- projectSignal.map(
-        _.revisorId.read.delegate
+      text <-- projectSignal.combineWith(UserController.users).map((project, users) =>
+        users.find(u => (u.id.delegate == project.revisorId.read.delegate)).map(_.name.read).getOrElse("")
+//        _.revisorId.read.delegate
           // _.revisorId.value.map(_.toString).getOrElse("")
       ),
       dataAttr("project-id") <-- projectSignal.map(_.id.delegate),

@@ -1,12 +1,15 @@
 package kanban.service
 
+import com.raquo.airstream.core.Signal
+import com.raquo.airstream.state.Var
 import kanban.auth.DexieProofResolver
 import kanban.persistence.DexieDB.dexieDB
-import typings.dexie.mod.Table
+import typings.dexie.mod.{Observable, Table, liveQuery}
 import ucan.Ucan
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
+import scala.util.{Failure, Success}
 import scala.scalajs.js
 import scala.scalajs.js.Date
 import scala.scalajs.js.UndefOr
@@ -27,6 +30,25 @@ object UcanTokenStore {
 
   private val ucanTable: Table[UcanTokenRow, String, UcanTokenRow] =
     dexieDB.table("ucanTokens")
+
+  private val ucansVar: Var[List[UcanTokenRow]] = Var(List.empty)
+  val allUcanSignal: Signal[List[UcanTokenRow]] = ucansVar.signal
+
+  private val ucanObservable = liveQuery(() => listAll())
+  ucanObservable.subscribe(
+    next = (queryResultFuture) =>
+      queryResultFuture.onComplete {
+        case Success(ucanSeq) => {
+          ucansVar.set(
+            ucanSeq.toList.sortBy(_.createdAt)
+          )
+        }
+        case Failure(exception) =>
+          println(s"Error observing ucans: $exception")
+      },
+    error = (error) => println(s"Error observing ucans: $error")
+    // complete = ? (not needed)
+  )
 
   private def computeCapKeys(ucan: Ucan.Ucan): Seq[String] = {
     ucan.payload.cap.flatMap { cap =>
