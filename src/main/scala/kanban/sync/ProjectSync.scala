@@ -8,6 +8,7 @@ import typings.trystero.mod.*
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
+import scala.scalajs.js.JSON
 
 object ProjectSync {
   private trait ProjectUpdate extends js.Object:
@@ -28,18 +29,28 @@ object ProjectSync {
   def sendProjectUpdate(
                          project: Project,
                          targetPeers: List[String] = List.empty
-                       ): Unit =
+                       ): Unit = {
+
     println("sending project update")
     val update = new ProjectUpdate {
       val id = project.id.delegate
       val payload = project.toNative
     }
+    // send project update via trystero
     if targetPeers.isEmpty then _sendProjectUpdate(update)
     else _sendProjectUpdate(data = update, targetPeers = targetPeers.toJSArray)
 
-  def receiveProjectUpdate(callback: Project => Unit): Unit =
+    // send project update via websockets
+    Websockets.socket.send(JSON.stringify(update))
+  }
+
+
+  def receiveProjectUpdate(callback: Project => Unit): Unit = {
+    // receive updates via trystero
     _receiveProjectUpdate((data: ProjectUpdate, peerId: String, metaData) =>
       val incoming = NativeConverter[Project].fromNative(data.payload)
       callback(incoming)
     )
+    // TODO: receive updates via websockets
+  }
 }

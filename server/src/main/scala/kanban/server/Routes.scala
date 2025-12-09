@@ -8,14 +8,9 @@ import org.http4s.StaticFile
 import fs2.io.file.Files
 import fs2.Pipe
 import fs2.Stream
-import cats.MonadThrow
 import cats.effect.kernel.Concurrent
 import cats.effect.std.Queue
-import cats.syntax.all.*
 import fs2.concurrent.Topic
-
-import java.util.ConcurrentModificationException
-import scala.concurrent.duration.DurationInt
 
 class Routes[F[_]: {Files, Concurrent}] extends Http4sDsl[F] {
 
