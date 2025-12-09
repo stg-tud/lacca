@@ -5,7 +5,7 @@ import kanban.controllers.ProjectController.projectEventBus
 import kanban.controllers.{ProjectController, UserController}
 import kanban.domain.events.ProjectEvent.Updated
 import kanban.domain.models.User.*
-import kanban.domain.models.{Project, ProjectStatus, User, UserId, UserPermission, Permission}
+import kanban.domain.models.{Permission, Project, ProjectStatus, User, UserId, UserPermission}
 import kanban.routing.Pages.{KanbanBoardPage, ProjectDetailsPage}
 import kanban.routing.Router
 import kanban.service.UserService.*
@@ -23,6 +23,8 @@ import kanban.auth.ProjectUcanService
 import ucan.Base32
 import kanban.sync.TokenSync
 import kanban.service.UcanTokenStore
+import kanban.service.UcanTokenStore.allUcanSignal
+
 import scala.concurrent.Future
 import ucan.Base58
 
@@ -39,11 +41,6 @@ object ProjectDetailsPageView {
     val editedDeadlineVar = Var[Option[Date]](None)
     val showPermittedUsersVar = Var(false)
     val editedPermittedUserIdVar: Var[UserId] = Var(Uid.zero)
-    // Fetch all the tokens
-    val allUcanSignal: Signal[Seq[UcanTokenStore.UcanTokenRow]] =
-      EventStream.fromFuture(UcanTokenStore.listAll())
-        .map(_.sortBy(_.createdAt)) // optional: sort by creation time
-        .toSignal(Seq.empty)
 
     // Signal with User objects which in the replica table
     val replicaUsersSignal: Signal[Seq[User]] = 
@@ -188,7 +185,14 @@ object ProjectDetailsPageView {
                       child <-- allUcanSignal.flatMapSwitch { rows =>
                         EventStream.fromFuture {
                           Future.sequence(
-                            rows.map { row =>
+                            rows
+                              .filter { row =>
+                                row.capKeys.toOption.getOrElse(js.Array()).toSeq.exists(cap =>
+                                  val (pId, permission) = parseCapability(cap)
+                                  pId == projectId.delegate
+                                )
+                              }
+                              .map { row =>
                               lookupUserIdByDid(row.aud).map { maybeUserId =>
                                 val uidClean = maybeUserId.map(_.stripPrefix("🪪"))
                                 val username = uidClean.flatMap(id => users.find(_.id.delegate == id).
