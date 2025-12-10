@@ -183,35 +183,59 @@ object ProjectDetailsPageView {
 
                     div(
                       h3("Benutzerberechtigungen"),
+                      // TODO: Refactor code
                       // Render all UCAN tokens with permissions
-                      div(s"Project ID: ${projectId.delegate}"), // Include the current project ID here
+                      div(s"Project ID: ${projectId.delegate}"), // Include the current project ID to test
                       child <-- allUcanSignal.flatMapSwitch { rows =>
+                        // Filter tokens for the current project
+                        val tokens = rows.filter { row =>
+                          row.capKeys.toOption.getOrElse(js.Array()).toSeq
+                            .map(parseCapability)
+                            .exists(_._1 == projectId.delegate)
+                        }
+
+                        // Lookup user for each token
+                        val tokenFutures = tokens.map(tokenWithUsername(_, users))
+
                         EventStream.fromFuture {
-                          Future.sequence(
-                            rows.map { row =>
-                              lookupUserIdByDid(row.aud).map { maybeUserId =>
-                                val uidClean = maybeUserId.map(_.stripPrefix("🪪"))
-                                val username = uidClean.flatMap(id => users.find(_.id.delegate == id).
-                                  map(_.name.read)).getOrElse("Unbekannt")
-                                val audienceDisplay = uidClean.getOrElse("Unbekannt")
+                          Future.sequence(tokenFutures).map { tokensWithNames =>
+                            // Group by username and pick newest token
+                            val newestPerUserMap: Map[String, UcanTokenStore.UcanTokenRow] =
+                              tokensWithNames
+                                .groupBy(_._2)
+                                .view
+                                .mapValues(_.maxBy(_._1.createdAt)._1)
+                                .toMap
+
+                            div(
+                              users.map { user =>
+                                val username = user.name.read
+                                val maybeToken = newestPerUserMap.get(username)
+                                val (createdAtStr, permissionText) = maybeToken match {
+                                  case Some(token) =>
+                                    val capsForProject = token.capKeys.toOption.getOrElse(js.Array()).toSeq
+                                      .map(parseCapability)
+                                      .filter(_._1 == projectId.delegate)
+                                      .map(_._2)
+                                    (new Date(token.createdAt).toISOString(), if capsForProject.isEmpty then "None" else capsForProject.mkString(", "))
+                                  case None =>
+                                    ("-", "None") // default if no token
+                                }
 
                                 div(
                                   cls := "ucan-token-info",
-                                  h4(s"UCAN Token created at: ${new Date(row.createdAt).toISOString()}"),
-                                  div(s"Audience (userId): $audienceDisplay, Name: $username"),
+                                  h4(s"UCAN Token created at: $createdAtStr"),
+                                  div(s"User Name: $username"),
                                   div(
                                     "Capabilities:",
                                     ul(
-                                      row.capKeys.toOption.getOrElse(js.Array()).toSeq.map { cap =>
-                                        val (projectId, permission) = parseCapability(cap)
-                                        li(s"Project ID: $projectId, Permission: $permission")
-                                      }
+                                      li(s"Project ID: ${projectId.delegate}, Permission: $permissionText")
                                     )
                                   )
                                 )
                               }
-                            }
-                          ).map(div(_)) // wrap all token divs in one parent div
+                            )
+                          }
                         }
                       },
                       h3("Benutzerberechtigungen mit CRDT"),
@@ -533,4 +557,12 @@ object ProjectDetailsPageView {
     else
       ("Unknown", "Unknown")
   }
+
+  // Lookup user for each token
+  private def tokenWithUsername(token: UcanTokenStore.UcanTokenRow, users: Seq[User]): Future[(UcanTokenStore.UcanTokenRow, String)] =
+    lookupUserIdByDid(token.aud).map { maybeUserId =>
+      val uidClean = maybeUserId.map(_.stripPrefix("🪪"))
+      val username = uidClean.flatMap(id => users.find(_.id.delegate == id).map(_.name.read)).getOrElse("Unbekannt")
+      (token, username)
+    }
 }
