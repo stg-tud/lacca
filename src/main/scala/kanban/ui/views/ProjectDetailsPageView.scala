@@ -172,46 +172,20 @@ object ProjectDetailsPageView {
 
                         EventStream.fromFuture {
                           Future.sequence(tokenFutures).map { tokensWithNames =>
-                            // Track the current UCAN permission for each user
-                            val userPermVars: Map[UserId, Var[String]] = users.map { user =>
-                              val maybeToken = tokensWithNames.find(_._2 == user.name.read).map(_._1)
-                              val currentPerm = maybeToken match {
-                                case Some(token) =>
-                                  token.capKeys.toOption.getOrElse(js.Array()).toSeq
-                                    .map(parseCapability)
-                                    .find(_._1 == projectId.delegate)
-                                    .map(_._2)
-                                    .getOrElse("None")
-                                case None => "None"
-                              }
-                              user.id -> Var(currentPerm)
-                            }.toMap
+                            // Keep only the NEWEST token per username
+                            val newestTokenPerUser: Seq[(UcanTokenStore.UcanTokenRow, String)] =
+                              tokensWithNames
+                                .groupBy { case (_, username) => username }   // group by username, not aud
+                                .values
+                                .map { tokensForUser =>
+                                  tokensForUser.maxBy { case (token, _) => token.createdAt }
+                                }
+                                .toSeq
 
                             div(
                               h3("UCAN Permissions"),
                               ul(
-                                users.map { user =>
-                                  li(
-                                    // Show current UCAN permission reactively
-                                    span(child.text <-- userPermVars(user.id).signal),
-                                    // Dropdown to change permission
-                                    select(
-                                      option(value := "None", "None"),
-                                      option(value := "Read", "Read"),
-                                      option(value := "Write", "Write"),
-                                      value <-- userPermVars(user.id).signal, // keep dropdown in sync
-                                      onChange.mapToValue --> { newPermission =>
-                                        // Update Var immediately
-                                        userPermVars(user.id).set(newPermission)
-                                        // Delegate permission via UCAN
-                                        delegatePermissionToUser(projectId, user, newPermission)
-                                      }
-                                    )
-                                  )
-                                }
-                              ),
-                              ul(
-                                tokensWithNames.map { case (token, username) =>
+                                newestTokenPerUser.map { case (token, username) =>
                                   val permission =
                                     token.capKeys.toOption.getOrElse(js.Array()).toSeq
                                       .map(parseCapability)
