@@ -13,14 +13,6 @@ type ProjectId = Uid
 enum ProjectStatus derives NativeConverter:
   case Neu, Geplant, InArbeit, Abrechenbar, Abgeschlossen
 
-enum Permission derives NativeConverter:
-  case None, Read, Write
-
-case class UserPermission(
-    userId: UserId,
-    permission: Permission
-) derives NativeConverter
-
 case class Project(
     id: ProjectId,
     name: LastWriterWins[String],
@@ -28,7 +20,6 @@ case class Project(
     revisorId: LastWriterWins[UserId],
     deadline: LastWriterWins[Option[Date]],
     timeTracked: GrowOnlyCounter = GrowOnlyCounter.zero,
-    permittedUsers: Option[LastWriterWins[Set[UserPermission]]] = None,
     deleted: Option[LastWriterWins[Boolean]] = Some(LastWriterWins(CausalTime.now(), false))
 ) derives NativeConverter
 
@@ -37,8 +28,7 @@ object Project {
       name: String,
       status: ProjectStatus,
       revisorId: UserId,
-      deadline: Option[Date],
-      permittedUsers: Option[Set[UserPermission]]
+      deadline: Option[Date]
   ): Project = {
     new Project(
       id = Uid.gen(),
@@ -46,7 +36,6 @@ object Project {
       status = LastWriterWins(CausalTime.now(), status),
       revisorId = LastWriterWins(CausalTime.now(), revisorId),
       deadline = LastWriterWins(CausalTime.now(), deadline),
-      permittedUsers = permittedUsers.map(set => LastWriterWins(CausalTime.now(), set)),
       deleted = Some(LastWriterWins(CausalTime.now(), false))
     )
   }
@@ -96,37 +85,6 @@ object Project {
     override def fromNative(ps: ParseState): Option[Date] =
       if (ps.json == null) None
       else Some(new Date(ps.json.asInstanceOf[String]))
-  }
-
-  // TODO: check if is there any errors left
-  given NativeConverter[Set[UserPermission]] with {
-    extension (a: Set[UserPermission])
-      override def toNative: js.Any =
-        NativeConverter[Seq[UserPermission]].toNative(a.toSeq)
-
-    override def fromNative(ps: ParseState): Set[UserPermission] =
-      try {
-        ps.json match
-          case arr if js.Array.isArray(arr) =>
-            // handle array
-            NativeConverter[Seq[UserPermission]]
-              .fromNative(arr)
-              .toSet
-
-          case other if js.typeOf(other) == "string" =>
-            val s = other.asInstanceOf[String]
-            println(s"⚠️ Received string instead of array: $s — interpreting as old format UserId")
-            Set(UserPermission(Uid.predefined(s), Permission.Read)) // fallback
-
-          case _ =>
-            println(s"⚠️ Unexpected permittedUsers format: ${ps.json}")
-            Set.empty
-
-      } catch {
-        case e: Exception =>
-          println(s"❌ Failed to parse Set[UserPermission]: ${e.getMessage}")
-          Set.empty
-      }
   }
 
   // CRDT lattices

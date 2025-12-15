@@ -5,14 +5,14 @@ import kanban.controllers.ProjectController.projectEventBus
 import kanban.controllers.{ProjectController, UserController}
 import kanban.domain.events.ProjectEvent.Updated
 import kanban.domain.models.User.*
-import kanban.domain.models.{Project, ProjectStatus, User, UserId, UserPermission, Permission}
+import kanban.domain.models.{Project, ProjectStatus, User, UserId}
 import kanban.routing.Pages.{KanbanBoardPage, ProjectDetailsPage}
 import kanban.routing.Router
 import kanban.service.UserService.*
 import kanban.sync.Replica
 import kanban.ui.components.NavBar
-import rdts.datatypes.LastWriterWins
-import rdts.time.CausalTime
+//import rdts.datatypes.LastWriterWins
+//import rdts.time.CausalTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
@@ -37,7 +37,6 @@ object ProjectDetailsPageView {
     val editedStatusVar = Var("")
     val editedRevisorIdVar: Var[UserId] = Var(Uid.zero)
     val editedDeadlineVar = Var[Option[Date]](None)
-    val showPermittedUsersVar = Var(false)
     val editedPermittedUserIdVar: Var[UserId] = Var(Uid.zero)
     // Fetch all the tokens
     val allUcanSignal: Signal[Seq[UcanTokenStore.UcanTokenRow]] =
@@ -153,34 +152,8 @@ object ProjectDetailsPageView {
                     )
                   ),
 
-                  // Button to show all the users with their permissions
-                  button(
-                    cls := "toggle-users-button",
-                    "Zugelassene Benutzer anzeigen",
-                    onClick --> { _ => showPermittedUsersVar.update(!_)}
-                  ),
-
-                  child <-- showPermittedUsersVar.signal.combineWith(UserController.users.signal).map {
-                    case (true, users) =>
-                      val userSet: Set[UserPermission] = project.permittedUsers.map(_.value).getOrElse(Set.empty)
-                      val userMap: Map[UserId, User] = users.map(u => u.id -> u).toMap                      
-                      ul(
-                        for (perm <- userSet.toList.sortBy(_.userId.delegate)) yield {
-                          val userName = userMap.get(perm.userId).map(_.name.read).getOrElse("Unbekannt")
-                          li(s"👤 $userName: ${perm.permission}")
-                        }
-                      )
-                    case (false, _) => emptyNode
-                  },
-
                   // Render the users with permission dropdowns
                   child <-- replicaUsersSignal.map { users =>
-                    val currentPermissions: Set[UserPermission] = 
-                      project.permittedUsers.map(_.value).getOrElse(Set.empty)
-
-                    val permissionsByUserId: Map[UserId, String] =
-                      currentPermissions.map(p => p.userId -> p.permission.toString).toMap
-
                     div(
                       h3("Benutzerberechtigungen"),
                       // TODO: Refactor code
@@ -236,45 +209,37 @@ object ProjectDetailsPageView {
                                     )
                                   )
                                 }
+                              ),
+                              ul(
+                                tokensWithNames.map { case (token, username) =>
+                                  val permission =
+                                    token.capKeys.toOption.getOrElse(js.Array()).toSeq
+                                      .map(parseCapability)
+                                      .find(_._1 == projectId.delegate)
+                                      .map(_._2)
+                                      .getOrElse("None")
+
+                                  li(
+                                    span(s"$username: "),
+                                    select(
+                                      option("None"),
+                                      option("Read"),
+                                      option("Write"),
+                                      value := permission,
+                                      onChange.mapToValue --> { newPerm =>
+                                        val userOpt = users.find(_.name.read == username)
+                                        userOpt.foreach { user =>
+                                          delegatePermissionToUser(projectId, user, newPerm)
+                                        }
+                                      }
+                                    )
+                                  )
+                                }
                               )
                             )
                           }
                         }
                       }, // TODO: End
-                      h3("Benutzerberechtigungen mit CRDT"),
-                      ul(
-                        users.map { user =>
-                          val currentPerm: String = permissionsByUserId.getOrElse(user.id, "None")
-                          li(
-                            span(user.name.read + ": "),
-                            select(
-                              option(value := "None", "None", selected := (currentPerm == "None")),
-                              option(value := "Read", "Read", selected := (currentPerm == "Read")),
-                              option(value := "Write", "Write", selected := (currentPerm == "Write")),
-                              onChange.mapToValue --> { newPermission =>
-                                val updatedSet: Set[UserPermission] = {
-                                  val filtered = currentPermissions.filterNot(_.userId == user.id)
-                                  if newPermission != "None" then
-                                    filtered + UserPermission(user.id, Permission.valueOf(newPermission))
-                                  else
-                                    filtered
-                                }
-
-                                val updatedCRDT = project.permittedUsers match {
-                                  case Some(crdt) => crdt.write(updatedSet)
-                                  case None       => LastWriterWins(CausalTime.now(), updatedSet)
-                                }
-
-                                val updatedProject = project.copy(permittedUsers = Some(updatedCRDT))
-                                projectEventBus.emit(Updated(project.id, updatedProject))
-
-                                // Delegate permission via UCAN
-                                delegatePermissionToUser(project.id, user, newPermission)
-                              }
-                            )
-                          )
-                        }
-                      )
                     )
                   },
 
