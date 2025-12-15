@@ -199,45 +199,48 @@ object ProjectDetailsPageView {
 
                         EventStream.fromFuture {
                           Future.sequence(tokenFutures).map { tokensWithNames =>
-                            // Group by username and pick newest token
-                            val newestPerUserMap: Map[String, UcanTokenStore.UcanTokenRow] =
-                              tokensWithNames
-                                .groupBy(_._2)
-                                .view
-                                .mapValues(_.maxBy(_._1.createdAt)._1)
-                                .toMap
+                            // Track the current UCAN permission for each user
+                            val userPermVars: Map[UserId, Var[String]] = users.map { user =>
+                              val maybeToken = tokensWithNames.find(_._2 == user.name.read).map(_._1)
+                              val currentPerm = maybeToken match {
+                                case Some(token) =>
+                                  token.capKeys.toOption.getOrElse(js.Array()).toSeq
+                                    .map(parseCapability)
+                                    .find(_._1 == projectId.delegate)
+                                    .map(_._2)
+                                    .getOrElse("None")
+                                case None => "None"
+                              }
+                              user.id -> Var(currentPerm)
+                            }.toMap
 
                             div(
-                              users.map { user =>
-                                val username = user.name.read
-                                val maybeToken = newestPerUserMap.get(username)
-                                val (createdAtStr, permissionText) = maybeToken match {
-                                  case Some(token) =>
-                                    val capsForProject = token.capKeys.toOption.getOrElse(js.Array()).toSeq
-                                      .map(parseCapability)
-                                      .filter(_._1 == projectId.delegate)
-                                      .map(_._2)
-                                    (new Date(token.createdAt).toISOString(), if capsForProject.isEmpty then "None" else capsForProject.mkString(", "))
-                                  case None =>
-                                    ("-", "None") // default if no token
-                                }
-
-                                div(
-                                  cls := "ucan-token-info",
-                                  h4(s"UCAN Token created at: $createdAtStr"),
-                                  div(s"User Name: $username"),
-                                  div(
-                                    "Capabilities:",
-                                    ul(
-                                      li(s"Project ID: ${projectId.delegate}, Permission: $permissionText")
+                              h3("UCAN Permissions"),
+                              ul(
+                                users.map { user =>
+                                  li(
+                                    // Show current UCAN permission reactively
+                                    span(child.text <-- userPermVars(user.id).signal),
+                                    // Dropdown to change permission
+                                    select(
+                                      option(value := "None", "None"),
+                                      option(value := "Read", "Read"),
+                                      option(value := "Write", "Write"),
+                                      value <-- userPermVars(user.id).signal, // keep dropdown in sync
+                                      onChange.mapToValue --> { newPermission =>
+                                        // Update Var immediately
+                                        userPermVars(user.id).set(newPermission)
+                                        // Delegate permission via UCAN
+                                        delegatePermissionToUser(projectId, user, newPermission)
+                                      }
                                     )
                                   )
-                                )
-                              }
+                                }
+                              )
                             )
                           }
                         }
-                      },
+                      }, // TODO: End
                       h3("Benutzerberechtigungen mit CRDT"),
                       ul(
                         users.map { user =>
