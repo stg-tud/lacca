@@ -11,8 +11,6 @@ import kanban.routing.Router
 import kanban.service.UserService.*
 import kanban.sync.Replica
 import kanban.ui.components.NavBar
-//import rdts.datatypes.LastWriterWins
-//import rdts.time.CausalTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
@@ -20,11 +18,10 @@ import scala.scalajs.js.Date
 import scala.util.{Failure, Success}
 import rdts.base.Uid
 import kanban.auth.ProjectUcanService
-import ucan.Base32
 import kanban.sync.TokenSync
 import kanban.service.UcanTokenStore
 import scala.concurrent.Future
-import ucan.Base58
+import kanban.utils.UserKeyUtils.*
 
 object ProjectDetailsPageView {
   val statusValues: List[String] = ProjectStatus.values.map(_.toString).toList
@@ -450,43 +447,6 @@ object ProjectDetailsPageView {
           println(s"No replica entry found for user ${user.id.delegate}")
       }
     }
-
-  /** Finds and returns a user's public key from the replicaIdTable */
-  private def findUserPublicKey(userId: UserId)
-      : scala.concurrent.Future[Option[String]] = {
-    Replica.replicaIdTable.toArray().toFuture.map { entries =>
-      entries.find(e => e.userId.stripPrefix("🪪") == userId.delegate) match {
-        case Some(matched) =>
-          println(s"Found public key for user ${userId.delegate}: ${matched.publicKey}")
-          Some(matched.publicKey)
-        case None =>
-          println(s"No public key found for user ${userId.delegate}")
-          None
-      }
-    }
-  }
-
-  /** Converts a Base32-encoded Ed25519 public key into a did:key string */
-  private def makeDidFromPublicKey(pubKeyStr: String): String = {
-    val pubKeyBytes: Array[Byte] = Base32.decode(pubKeyStr)
-    val prefix: Array[Byte] = Array(0xED.toByte, 0x01.toByte) // Ed25519 multicodec prefix
-    val combined: Array[Byte] = prefix ++ pubKeyBytes
-    val base58Encoded: String = ucan.Base58.encode(combined)
-    s"did:key:z$base58Encoded"
-  }
-
-  /** Finds and returns audience id from the audience did */
-  private def lookupUserIdByDid(audienceDid: String): Future[Option[String]] = {
-    val didBase58 = audienceDid.stripPrefix("did:key:z")        // remove DID prefix
-    val didBytes = Base58.decode(didBase58)                     // decode Base58
-    val pubKeyBytes = didBytes.drop(2)                          // remove Ed25519 prefix
-    val pubKeyBase32 = Base32.encode(pubKeyBytes)              // convert to Base32
-
-    // search replica table for matching publicKey
-    Replica.replicaIdTable.toArray().toFuture.map { entries =>
-      entries.toSeq.find(_.publicKey == pubKeyBase32).map(_.userId)
-    }
-  }
 
   /* Parses a capability string and returns (projectId, permission) */
   private def parseCapability(cap: String): (String, String) = {
