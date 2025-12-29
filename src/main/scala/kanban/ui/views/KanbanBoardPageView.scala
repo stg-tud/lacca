@@ -24,23 +24,13 @@ object KanbanBoardPageView {
   val projectStatusValues: List[String] =
     ProjectStatus.values.map(_.toString).toList
   val toggleDisplay: Var[String] = Var("none")
+  val permittedProjectIdsVar: Var[Set[String]] = Var(Set.empty)
 
   def apply(): HtmlElement = {
     setupDragAndDrop()
-    logAllUcanTokens()
+    getAllPermittedProjects() // Print out all the permitted projects for this user
     div(
       NavBar(),
-      // Print out now only for debug
-      child <-- Replica.id.signal.map {
-        case Some(rid) =>
-          println(s"[KanbanBoard] replicaId = ${rid.toString}")
-          println(s"[KanbanBoard] current userId = ${kanban.ui.views.GlobalState.userIdVar.now().getOrElse("None")}")
-          emptyNode
-        case None =>
-          println("[KanbanBoard] ReplicaId not set yet")
-          emptyNode
-      },
-      // Print out now only for debug
       div(
         idAttr := "kanbanboard-container",
         div(
@@ -92,20 +82,23 @@ object KanbanBoardPageView {
               projects = ProjectController.projects.signal
                 .combineWith(
                   selectedRevisorIdVar.signal,
-                  selectedDeadlineVar.signal
+                  selectedDeadlineVar.signal,
+                  permittedProjectIdsVar.signal
                 )
                 .map {
                   (
                       projectsList: List[Project],
                       selectedRevisorId: Uid,
-                      selectedDeadline: Option[Date]
+                      selectedDeadline: Option[Date],
+                      permittedProjectIds
                   ) =>
                     {
                       projectsList
                         .filter(p =>
                           p.status.value.toString == status &&
                             (selectedDeadline.isEmpty || p.deadline == selectedDeadline.get) &&
-                            (selectedRevisorId == Uid.zero || p.revisorId.read == selectedRevisorId)
+                            (selectedRevisorId == Uid.zero || p.revisorId.read == selectedRevisorId) &&
+                            permittedProjectIds.contains(p.id.delegate)
                         )
                     }
                 }
@@ -130,8 +123,8 @@ object KanbanBoardPageView {
     )
   }
 
-  // TODO: list only the tokens from the projects on the screen right now
-  private def logAllUcanTokens(): Unit = {
+  private def getAllPermittedProjects(): Unit = {
+    // Get all visible projects
     val visibleProjectsSignal: Signal[List[Project]] =
       ProjectController.projects.signal
         .combineWith(selectedRevisorIdVar.signal, selectedDeadlineVar.signal)
@@ -142,58 +135,50 @@ object KanbanBoardPageView {
           }
         }
 
+    // Combine visible projects with current user
     (visibleProjectsSignal.combineWith(GlobalState.userIdVar.signal)).foreach {
       case (visibleProjects, maybeUserIdOpt) =>
         maybeUserIdOpt.foreach { currentUserId =>
           val visibleProjectIds = visibleProjects.map(_.id.delegate).toSet
 
           UcanTokenStore.listAll().foreach { tokens =>
-            println("[KanbanBoard]========== UCAN TOKENS FOR CURRENT USER (VISIBLE PROJECTS, NEWEST ONLY) ==========")
-
-            // Lookup userId for each token and filter by current user
-            val tokensForCurrentUserFut = Future.sequence {
-              tokens.map(token => 
-                lookupUserIdByDid(token.aud).map(maybeUserId => (token, maybeUserId))
-              )
+            val userTokensFut = Future.sequence {
+              tokens.map(token => lookupUserIdByDid(token.aud).map(_.filter(_ == currentUserId).map(_ => token)))
             }
 
-            tokensForCurrentUserFut.foreach { tokensWithUserId =>
-              // Keep only tokens for current user
-              val userTokens = tokensWithUserId.collect {
-                case (token, Some(userId)) if userId == currentUserId => token
-              }
-
-              // Flatten token capabilities to (projectId, permission, token)
-              val capsWithTokens = userTokens.flatMap { token =>
+            userTokensFut.foreach { userTokens =>
+              val capsWithTokens = userTokens.flatten.flatMap { token =>
                 token.capKeys.toOption.getOrElse(js.Array()).toSeq.map(parseCapability).map {
                   case (projectId, permission) => (projectId, permission, token)
                 }
               }
 
-              // Filter only visible projects
               val visibleCaps = capsWithTokens.filter { case (projectId, _, _) =>
                 visibleProjectIds.contains(projectId)
               }
 
-              // Group by projectId and pick the newest token
-              val newestTokenPerProject = visibleCaps
-                .groupBy(_._1) // group by projectId
-                .map { case (projectId, caps) =>
-                  caps.maxBy(_._3.createdAt) // pick the one with latest createdAt
-                }
+              // Only newest token per project with permission not "None"
+              val newestAllowedProjects = visibleCaps
+                .groupBy(_._1)
+                .collect {
+                  case (projectId, caps) =>
+                    val newest = caps.maxBy(_._3.createdAt)
+                    if newest._2 != "None" then
+                      println(
+                        s"""
+                          |aud       : ${newest._3.aud}
+                          |userId    : $currentUserId
+                          |projectId : ${newest._1}
+                          |permission: ${newest._2}
+                          |createdAt : ${newest._3.createdAt}
+                          |--------------------------------
+                          |""".stripMargin
+                      )
+                      Some(newest._1)
+                    else None
+                }.flatten.toSet
 
-              newestTokenPerProject.foreach { case (projectId, permission, token) =>
-                println(
-                  s"""
-                    |aud       : ${token.aud}
-                    |userId    : $currentUserId
-                    |projectId : $projectId
-                    |permission: $permission
-                    |createdAt : ${token.createdAt}
-                    |--------------------------------
-                    |""".stripMargin
-                )
-              }
+              permittedProjectIdsVar.set(newestAllowedProjects)
             }
           }
         }
