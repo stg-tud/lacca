@@ -448,18 +448,6 @@ object ProjectDetailsPageView {
       }
     }
 
-  /* Parses a capability string and returns (projectId, permission) */
-  private def parseCapability(cap: String): (String, String) = {
-    val parts = cap.split(":") // ["kanban", "project", <projectid>#<permission>]
-    if parts.length == 3 then
-      val projectAndPerm = parts(2).split("#") // [projectid, permission]
-      val projectId = projectAndPerm(0)
-      val permission = projectAndPerm.lift(1).getOrElse("None")
-      (projectId, permission)
-    else
-      ("Unknown", "Unknown")
-  }
-
   // Lookup user for each token
   private def tokenWithUsername(token: UcanTokenStore.UcanTokenRow, users: Seq[User]): Future[(UcanTokenStore.UcanTokenRow, String)] =
     lookupUserIdByDid(token.aud).map { maybeUserId =>

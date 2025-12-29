@@ -36,4 +36,16 @@ object UserKeyUtils {
       entries.toSeq.find(_.publicKey == pubKeyBase32).map(_.userId)
     }
   }
+
+  /** Parses a capability string and returns (projectId, permission) */
+  def parseCapability(cap: String): (String, String) = {
+    val parts = cap.split(":") // ["kanban", "project", <projectid>#<permission>]
+    if parts.length == 3 then
+      val projectAndPerm = parts(2).split("#") // [projectid, permission]
+      val projectId = projectAndPerm(0)
+      val permission = projectAndPerm.lift(1).getOrElse("None")
+      (projectId, permission)
+    else
+      ("Unknown", "Unknown")
+  }
 }
