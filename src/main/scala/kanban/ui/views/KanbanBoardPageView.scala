@@ -12,7 +12,9 @@ import scala.scalajs.js.Date
 import scala.scalajs.js
 import kanban.service.UcanTokenStore
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import kanban.utils.UserKeyUtils.*
+import kanban.sync.Replica.owner
 
 object KanbanBoardPageView {
 
@@ -130,42 +132,71 @@ object KanbanBoardPageView {
 
   // TODO: list only the tokens from the projects on the screen right now
   private def logAllUcanTokens(): Unit = {
-    val currentUserIdOpt = kanban.ui.views.GlobalState.userIdVar.now()
-
-    currentUserIdOpt.foreach { currentUserId =>
-      UcanTokenStore.listAll().foreach { tokens =>
-        println("[KanbanBoard]========== UCAN TOKENS FOR CURRENT USER ==========")
-
-        if (tokens.isEmpty) {
-          println("No UCAN tokens found.")
+    val visibleProjectsSignal: Signal[List[Project]] =
+      ProjectController.projects.signal
+        .combineWith(selectedRevisorIdVar.signal, selectedDeadlineVar.signal)
+        .map { case (projectsList, selectedRevisorId, selectedDeadline) =>
+          projectsList.filter { p =>
+            (selectedDeadline.isEmpty || p.deadline == selectedDeadline.get) &&
+              (selectedRevisorId == Uid.zero || p.revisorId.read == selectedRevisorId)
+          }
         }
 
-        tokens.foreach { token =>
-          // Lookup userId from the token's audience DID
-          lookupUserIdByDid(token.aud).foreach { maybeUserId =>
-            maybeUserId match {
-              case Some(userId) if userId == currentUserId =>
-                val capsSeq = token.capKeys.toOption.getOrElse(js.Array()).toSeq
-                val projectCaps = capsSeq.map(parseCapability) // List of (projectId, permission)
+    (visibleProjectsSignal.combineWith(GlobalState.userIdVar.signal)).foreach {
+      case (visibleProjects, maybeUserIdOpt) =>
+        maybeUserIdOpt.foreach { currentUserId =>
+          val visibleProjectIds = visibleProjects.map(_.id.delegate).toSet
 
-                projectCaps.foreach { case (projectId, permission) =>
-                  println(
-                    s"""
-                      |aud       : ${token.aud}
-                      |userId    : $userId
-                      |projectId : $projectId
-                      |permission: $permission
-                      |createdAt : ${token.createdAt}
-                      |--------------------------------
-                      |""".stripMargin
-                  )
+          UcanTokenStore.listAll().foreach { tokens =>
+            println("[KanbanBoard]========== UCAN TOKENS FOR CURRENT USER (VISIBLE PROJECTS, NEWEST ONLY) ==========")
+
+            // Lookup userId for each token and filter by current user
+            val tokensForCurrentUserFut = Future.sequence {
+              tokens.map(token => 
+                lookupUserIdByDid(token.aud).map(maybeUserId => (token, maybeUserId))
+              )
+            }
+
+            tokensForCurrentUserFut.foreach { tokensWithUserId =>
+              // Keep only tokens for current user
+              val userTokens = tokensWithUserId.collect {
+                case (token, Some(userId)) if userId == currentUserId => token
+              }
+
+              // Flatten token capabilities to (projectId, permission, token)
+              val capsWithTokens = userTokens.flatMap { token =>
+                token.capKeys.toOption.getOrElse(js.Array()).toSeq.map(parseCapability).map {
+                  case (projectId, permission) => (projectId, permission, token)
+                }
+              }
+
+              // Filter only visible projects
+              val visibleCaps = capsWithTokens.filter { case (projectId, _, _) =>
+                visibleProjectIds.contains(projectId)
+              }
+
+              // Group by projectId and pick the newest token
+              val newestTokenPerProject = visibleCaps
+                .groupBy(_._1) // group by projectId
+                .map { case (projectId, caps) =>
+                  caps.maxBy(_._3.createdAt) // pick the one with latest createdAt
                 }
 
-              case _ => // Skip tokens for other users
+              newestTokenPerProject.foreach { case (projectId, permission, token) =>
+                println(
+                  s"""
+                    |aud       : ${token.aud}
+                    |userId    : $currentUserId
+                    |projectId : $projectId
+                    |permission: $permission
+                    |createdAt : ${token.createdAt}
+                    |--------------------------------
+                    |""".stripMargin
+                )
+              }
             }
           }
         }
-      }
-    }
+    }(using owner)
   }
 }
