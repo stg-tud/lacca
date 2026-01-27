@@ -2,6 +2,8 @@ package kanban.sync
 
 import typings.trystero.mod.*
 import kanban.sync.TrysteroSetup.room
+import kanban.sync.UpdateType.TokenUpdate
+
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
@@ -35,13 +37,14 @@ object TokenSync {
   ): Unit =
     val msg = TokenMessage(projectId, userId, token)
     println(s"[TokenSync] Sending token -> projectId: $projectId, userId: $userId, token: $token")
+    Websockets.sendUpdate(TokenUpdate, s"$projectId,$userId,$token")
     if targetPeers.isEmpty then
       _sendToken(msg)
     else
       _sendToken(data = msg, targetPeers = targetPeers.toJSArray)
 
   /** Register a callback when a peer sends a token */
-  def receiveToken(callback: (String, String, String) => Unit): Unit =
+  def receiveToken(callback: (String, String, String) => Unit): Unit = {
     _receiveToken { (data: TokenMessage, peerId: String, metaData) =>
       // safely unwrap, in case something went wrong
       val projectId = Option(data.projectId).getOrElse("null")
@@ -50,4 +53,7 @@ object TokenSync {
       println(s"[TokenSync] Received token success")
       callback(projectId, userId, token)
     }
+    
+    Websockets.tokenCallback = callback
+  }
 }

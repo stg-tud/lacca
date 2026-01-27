@@ -33,6 +33,8 @@ object ReplicaSync {
       replicaId = replicaId,
       publicKey = publicKey
     ).asInstanceOf[ReplicaInfo]
+    
+    Websockets.sendUpdate(UpdateType.ReplicaUpdate, s"$userId,$replicaId,$publicKey")
 
     if targetPeers.isEmpty then
       println(s"[ReplicaSync] Broadcasting from user '$userId': replica $replicaId with pk=$publicKey to all peers")
@@ -45,7 +47,7 @@ object ReplicaSync {
   /** Listen for incoming replica public keys */
   def receiveReplicaInfo(
       callback: (userId: String, replicaId: String, publicKey: String, peerId: String) => Unit
-  ): Unit =
+  ): Unit = {
     _receiveReplicaInfo((data: ReplicaInfo, peerId: String, metaData) =>
       val uid = Option(data.userId).getOrElse("unknown-user")
       val rid = Option(data.replicaId).getOrElse("unknown-replica")
@@ -53,4 +55,7 @@ object ReplicaSync {
       println(s"[ReplicaSync] Received from user '$uid': replica $rid with pk=$pk from peer $peerId")
       callback(uid, rid, pk, peerId)
     )
+    
+    Websockets.replicaCallback = (uId, rId, pKey) => callback(uId, rId, pKey, "None")
+  }
 }

@@ -10,7 +10,7 @@ import kanban.routing.Router
 import kanban.service.ProjectService.*
 import kanban.service.ProjectService
 import kanban.sync.ProjectSync.{receiveProjectUpdate, sendProjectUpdate}
-import kanban.sync.TrysteroSetup
+import kanban.sync.{Replica, TokenSync, TrysteroSetup, Websockets}
 import kanban.sync.UserSync.sendUserUpdate
 import rdts.base.Lattice
 import rdts.datatypes.LastWriterWins
@@ -19,15 +19,16 @@ import rdts.time.CausalTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-import kanban.sync.Replica
 import ucan.Base32
-import kanban.sync.ReplicaSync.{sendReplicaInfo, receiveReplicaInfo}
+import kanban.sync.ReplicaSync.{receiveReplicaInfo, sendReplicaInfo}
 import kanban.sync.Replica.replicaIdTable
 import kanban.sync.Replica.replicaDBEntry
+
 import scala.scalajs.js
 import kanban.ui.views.GlobalState
-import kanban.sync.TokenSync
 import kanban.service.UcanTokenStore
+import kanban.sync.UpdateType.{Join, ProjectUpdate, ReplicaUpdate, UserUpdate}
+import kanban.sync.Websockets.sendUpdate
 
 object ProjectController {
   val projects: Var[List[Project]] = Var(List.empty)
@@ -41,6 +42,7 @@ object ProjectController {
   // send all projects when a new device joins
   // TODO: Temporary fix for sending project and user updates
   //  find a better way to do this!
+
   TrysteroSetup.room.onPeerJoin(peerId =>
     projects
       .now()
@@ -55,6 +57,29 @@ object ProjectController {
         GlobalState.userIdVar.now() match
           case Some(uid) =>
             sendReplicaInfo(uid, replicaId.show, pk, List(peerId))
+            println(s"[ProjectController] Sent replica info for userId=$uid")
+          case None =>
+            println("[ProjectController] Cannot send replica info: userId not ready")
+        println(s"[ProjectController] Sent success")
+      case _ => // not ready yet
+    }
+  )
+  
+  Websockets.joinCallback = (_ =>
+    println("new device joined!")
+    projects
+      .now()
+      .foreach(project => Websockets.sendUpdate(ProjectUpdate, project.toJson))
+    users
+      .now()
+      .foreach(user => Websockets.sendUpdate(UserUpdate, user.toJson))
+    // send replica public key
+    Replica.id.signal.combineWith(Replica.keyMaterial.signal).foreach {
+      case (Some(replicaId), Some(km)) =>
+        val pk = Base32.encode(km.publicKey)
+        GlobalState.userIdVar.now() match
+          case Some(uid) =>
+            Websockets.sendUpdate(ReplicaUpdate, s"$uid,replicaId.show, pk")
             println(s"[ProjectController] Sent replica info for userId=$uid")
           case None =>
             println("[ProjectController] Cannot send replica info: userId not ready")

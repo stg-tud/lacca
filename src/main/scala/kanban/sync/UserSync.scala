@@ -6,6 +6,7 @@ import kanban.sync.TrysteroSetup.{room, updatePeers}
 import typings.trystero.mod.ActionSender
 import typings.trystero.mod.ActionReceiver
 import kanban.domain.models.User
+import kanban.sync.UpdateType.{ProjectUpdate, UserUpdate}
 import org.getshaka.nativeconverter.NativeConverter
 
 object UserSync {
@@ -34,12 +35,15 @@ object UserSync {
       val id = user.id.delegate
       val payload = user.toNative
     }
+    Websockets.sendUpdate(UserUpdate, user.toJson)
     if targetPeers.isEmpty then _sendUserUpdate(update)
     else _sendUserUpdate(data = update, targetPeers = targetPeers.toJSArray)
 
-  def receiveUserUpdate(callback: User => Unit): Unit =
+  def receiveUserUpdate(callback: User => Unit): Unit = {
     _receiveUserUpdate((data: UserUpdate, peerId: String, metaData) =>
       val incoming = NativeConverter[User].fromNative(data.payload)
       callback(incoming)
     )
+    Websockets.userCallback = callback
+  }
 }

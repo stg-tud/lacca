@@ -4,6 +4,9 @@ import com.raquo.laminar.api.L.{*, given}
 import kanban.domain.models.Project
 import org.getshaka.nativeconverter.NativeConverter
 import kanban.sync.TrysteroSetup.{room, updatePeers}
+import kanban.sync.UpdateType.{Join, ProjectUpdate}
+import kanban.sync.Websockets.sendUpdate
+import org.scalajs.dom.MessageEvent
 import typings.trystero.mod.*
 
 import scala.scalajs.js
@@ -32,6 +35,7 @@ object ProjectSync {
                        ): Unit = {
 
     println("sending project update")
+
     val update = new ProjectUpdate {
       val id = project.id.delegate
       val payload = project.toNative
@@ -41,7 +45,7 @@ object ProjectSync {
     else _sendProjectUpdate(data = update, targetPeers = targetPeers.toJSArray)
 
     // send project update via websockets
-    Websockets.socket.send(JSON.stringify(update))
+    Websockets.sendUpdate(ProjectUpdate, project.toJson)
   }
 
 
@@ -51,6 +55,7 @@ object ProjectSync {
       val incoming = NativeConverter[Project].fromNative(data.payload)
       callback(incoming)
     )
-    // TODO: receive updates via websockets
+    
+    Websockets.projectCallback = callback
   }
 }
