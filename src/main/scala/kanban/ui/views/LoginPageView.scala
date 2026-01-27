@@ -60,7 +60,7 @@ object LoginPageView {
                   users.find(u =>
                     u.name.read == username && checkPassword(password, u.password.read)
                   ).foreach { user =>
-                    val userId = user.id.show
+                    val userId = user.id.delegate
                     GlobalState.usernameVar.set(username)
                     GlobalState.userIdVar.set(Some(userId))
                     // print userId to verify

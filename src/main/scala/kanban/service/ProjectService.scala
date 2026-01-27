@@ -1,9 +1,10 @@
 package kanban.service
 
-import kanban.domain.models.{Project, ProjectId, ProjectStatus}
+import kanban.domain.models.{Project, ProjectId, ProjectStatus, User}
 import kanban.persistence.DexieDB.dexieDB
 import kanban.auth.KeyMaterialSingleton
 import kanban.auth.ProjectUcanService
+import kanban.ui.views.ProjectDetailsPageView.delegatePermissionToUser
 import org.getshaka.nativeconverter.NativeConverter
 import rdts.datatypes.LastWriterWins
 import typings.dexie.mod.{Table, liveQuery}
@@ -26,6 +27,10 @@ object ProjectService {
       ProjectUcanService
         .issueProjectCreationToken(project.id)
         .map(_ => putResult)
+
+      UserService.getUserById(project.revisorId.read).andThen {
+        case Success(user) => delegatePermissionToUser(project.id, user, "Write")
+      }
     }
   }
 
@@ -46,6 +51,10 @@ object ProjectService {
         NativeConverter[Project].fromNative(projectJsObject.get)
       }
     }
+  }
+
+  def getUsersWithAccess(projectId: ProjectId): Future[Set[User]] = {
+    ???
   }
 
   def deleteProject(projectId: ProjectId): Future[Unit] = {

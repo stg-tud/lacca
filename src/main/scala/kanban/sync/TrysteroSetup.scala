@@ -15,8 +15,8 @@ object TrysteroSetup {
       "turn:relay1.expressturn.com:3478",
       "turn:relay1.expressturn.com:443"
     )
-    username = "efMS8M021S1G8NJ8J7"
-    credential = "qrBXTlhKtCJDykOK"
+    username = "000000002080715755"
+    credential = "XJd2kZ1y0x5Qv5c5eWTuNA0Lmho"
 
   private val tturn = new RTCIceServer:
     urls = "stun:stun.t-online.de:3478"
@@ -24,7 +24,7 @@ object TrysteroSetup {
   private val rtcConf = new RTCConfiguration:
     iceServers = js.Array(eturn, tturn)
 
-  private object DefaultConfig extends RelayConfig, BaseRoomConfig {
+  private object DefaultConfig extends RelayConfig, BaseRoomConfig, TurnConfig {
     var appId = "lacca_test_1270"
     rtcConfig = rtcConf
   }

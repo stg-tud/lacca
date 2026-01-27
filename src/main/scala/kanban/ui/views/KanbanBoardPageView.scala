@@ -2,11 +2,13 @@ package kanban.ui.views
 
 import com.raquo.laminar.api.L.{*, given}
 import kanban.controllers.{ProjectController, UserController}
-import kanban.domain.models.{Project, ProjectStatus, UserId}
+import kanban.domain.models.{UserPermission, Permission, Project, ProjectStatus, UserId}
 import kanban.sync.Replica
 import kanban.ui.components.{KanbanColumn, NavBar}
 import kanban.ui.views.DragAndDrop.setupDragAndDrop
 import rdts.base.Uid
+import rdts.datatypes.LastWriterWins
+import rdts.time.CausalTime
 
 import scala.scalajs.js.Date
 
@@ -74,20 +76,25 @@ object KanbanBoardPageView {
               projects = ProjectController.projects.signal
                 .combineWith(
                   selectedRevisorIdVar.signal,
-                  selectedDeadlineVar.signal
+                  selectedDeadlineVar.signal,
+                  GlobalState.userIdVar.signal
                 )
                 .map {
                   (
                       projectsList: List[Project],
                       selectedRevisorId: Uid,
-                      selectedDeadline: Option[Date]
+                      selectedDeadline: Option[Date],
+                      userId: Option[String]
                   ) =>
                     {
                       projectsList
                         .filter(p =>
                           p.status.value.toString == status &&
                             (selectedDeadline.isEmpty || p.deadline == selectedDeadline.get) &&
-                            (selectedRevisorId == Uid.zero || p.revisorId.read == selectedRevisorId)
+                            (selectedRevisorId == Uid.zero || p.revisorId.read == selectedRevisorId) &&
+                            p.permittedUsers.getOrElse(LastWriterWins(CausalTime.now(), Set.empty)).read.exists {
+                              case UserPermission(id, permission) => (permission == Permission.Read || permission == Permission.Write) && id.delegate == userId.getOrElse("")
+                            }
                         )
                     }
                 }
