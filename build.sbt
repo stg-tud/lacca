@@ -5,7 +5,7 @@ val CirceVersion = "0.14.15"
 val LogbackVersion = "1.4.11"
 val CatsParseVersion = "0.3.10"
 
-val ScalaVersion = "3.6.4"
+val ScalaVersion = "3.8.2"
 
 lazy val kanban = project
   .in(file("."))
