@@ -40,7 +40,6 @@ object NavBar {
           )
         }
       ),
-      UserCounter(),
       a(
         cls := "nav-link username-link", // Style it as a link
         child.text <-- GlobalState.usernameVar.signal, // Display the current username
