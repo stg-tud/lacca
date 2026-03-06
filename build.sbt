@@ -1,9 +1,6 @@
 import org.scalajs.linker.interface.ModuleSplitStyle
 
-val Http4sVersion = "0.23.32"
-val CirceVersion = "0.14.15"
-val LogbackVersion = "1.4.11"
-val CatsParseVersion = "0.3.10"
+val Http4sVersion = "0.23.33"
 
 val ScalaVersion = "3.8.2"
 
@@ -40,8 +37,8 @@ lazy val kanban = project
      * It provides static types for the browser DOM APIs.
      */
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "2.8.0",
-      "com.raquo" %%% "laminar" % "17.0.0",
+      "org.scala-js" %%% "scalajs-dom" % "2.8.1",
+      "com.raquo" %%% "laminar" % "17.2.1",
       "com.raquo" %%% "waypoint" % "8.0.1",
       "de.tu-darmstadt.stg" %%% "rdts" % "0.37.0",
       "org.getshaka" %%% "native-converter" % "0.9.0"
